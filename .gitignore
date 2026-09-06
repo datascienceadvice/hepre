@@ -1,5 +1,41 @@
-.Rproj.user
+# --- Rust build artifacts ---
+/target/
+**/*.rs.bk
+*.pdb
+
+# --- Cargo ---
+# Cargo.lock is intentionally committed (application-style crate with examples/bin).
+
+# --- Vendored OpenFHE (sources + builds) ---
+# vendor/ содержит форк OpenFHE `openfhe-development` и его билды/префиксы —
+# это тяжёлые внешние артефакты, в репозиторий не входят.
+/vendor/
+
+# --- C/C++ / clang-cl / CMake artifacts ---
+*.obj
+*.o
+*.lib
+*.a
+*.dll
+*.so
+*.exe
+*.out
+*.pdb
+*.ilk
+*.idb
+/out/
+/cmake-build-*/
+
+# --- RStudio project cruft (hepre.Rproj сам отслеживается) ---
+.Rproj.user/
 .Rhistory
 .RData
 .Ruserdata
-vendor/*
+
+# --- Editor / OS ---
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
