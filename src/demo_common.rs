@@ -79,6 +79,7 @@ fn parse_model_msg(e: serde_json::Error, raw: &str) -> String {
 }
 
 pub fn parse_model(s: &str) -> Result<Model, String> {
+    let s = s.trim_start_matches('\u{feff}');
     serde_json::from_str(s).map_err(|e| parse_model_msg(e, s))
 }
 
@@ -90,6 +91,7 @@ pub struct Patient {
 }
 
 pub fn parse_patients(s: &str) -> Result<Vec<Patient>, String> {
+    let s = s.trim_start_matches('\u{feff}');
     let mut v: Vec<Patient> = serde_json::from_str(s)
         .map_err(|e| format!("не удалось разобрать --patients JSON ({}...): {e}", s.chars().take(80).collect::<String>()))?;
     for (i, p) in v.iter_mut().enumerate() {

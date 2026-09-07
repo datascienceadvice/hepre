@@ -196,23 +196,20 @@ cargo test
 `handoff/` (ключи и шифротексты, бинарный формат OpenFHE). Никакая роль не владеет
 чужими секретами: сервер не имеет ключей расшифровки и видит только шифротексты.
 
-Датасет (inline JSON) и модель (публичная) — те же, что в тестах A2:
+Датасет (JSON) и модель (публичная) — те же, что в тестах A2:
 `[hba1c, glucose, bmi, age, family]`, порог `-1.45`.
 
-Параметры `--patients`/`--model` принимают **либо** inline JSON-строку,
-**либо** путь к файлу с JSON (надёжнее — нет проблем с кавычками в консоли).
+Параметры `--patients`/`--model` принимают **либо** путь к файлу с JSON (надёжнее всего),
+**либо** inline JSON-строку. Рекомендуемый способ — файлы: кавычки консоли в JSON вообще
+не участвуют, а BOM (PowerShell 5.1 `Set-Content`) парсер пропускает.
 
 **Подготовка** (из корня репозитория; MSVC-рантайм в `PATH`, см. «Запуск тестов»):
 ```powershell
 cargo build --release --bins
 
-# JSON сохраняем в переменные PowerShell один раз (кавычки внутри сохраняются):
-$patients = '[{"name":"P1","features":[0.50,0.40,0.20,0.30,0.00]},
-              {"name":"P2","features":[0.80,0.70,0.50,0.60,1.00]},
-              {"name":"P3","features":[0.10,0.20,0.10,0.10,0.00]},
-              {"name":"P4","features":[0.70,0.90,0.70,0.80,1.00]},
-              {"name":"P5","features":[0.30,0.60,0.30,0.50,0.00]}]'
-$model = '{"weights":[0.22,0.14,0.08,0.03,0.10],"intercept":-1.70,"threshold":-1.45}'
+# JSON — в файлы, один раз (руками или в редакторе; содержимое каждой команды — одна строка):
+Set-Content handoff\patients.json -Value '[{"name":"P1","features":[0.50,0.40,0.20,0.30,0.00]},{"name":"P2","features":[0.80,0.70,0.50,0.60,1.00]},{"name":"P3","features":[0.10,0.20,0.10,0.10,0.00]},{"name":"P4","features":[0.70,0.90,0.70,0.80,1.00]},{"name":"P5","features":[0.30,0.60,0.30,0.50,0.00]}]'
+Set-Content handoff\model.json -Value '{"weights":[0.22,0.14,0.08,0.03,0.10],"intercept":-1.70,"threshold":-1.45}'
 ```
 
 **1. Больница генерирует ключи** (`handoff/hosp.pk.bin` → лаборатории, `hosp.sk.bin` остаётся у больницы):
@@ -228,7 +225,7 @@ cargo run --release --bin hospital -- keygen
 
 **2. Лаборатория шифрует фичи пациентов и формирует ключ перешифрования**:
 ```powershell
-cargo run --release --bin lab -- encrypt --patients $patients --model $model --hospital-pk handoff\hosp.pk.bin
+cargo run --release --bin lab -- encrypt --patients handoff\patients.json --model handoff\model.json --hospital-pk handoff\hosp.pk.bin
 ```
 ```
 --- Лаборатория: шифрование фичей пациентов ---
@@ -241,7 +238,7 @@ cargo run --release --bin lab -- encrypt --patients $patients --model $model --h
 
 **3. Сервер считает скор гомоморфно и перешифровывает его на ключ больницы (PRE)**:
 ```powershell
-cargo run --release --bin server -- score --model $model
+cargo run --release --bin server -- score --model handoff\model.json
 ```
 ```
 --- Сервер: гомоморфный расчёт скора и PRE ---
@@ -258,7 +255,7 @@ cargo run --release --bin server -- score --model $model
 (`--patients` — только для демонстрационной сверки точности; в реальном протоколе
 больница фичи пациентов не видит):
 ```powershell
-cargo run --release --bin hospital -- decrypt --model $model --patients $patients
+cargo run --release --bin hospital -- decrypt --model handoff\model.json --patients handoff\patients.json
 ```
 ```
 --- Больница: расшифровка скоров и порог риска ---
@@ -274,6 +271,16 @@ cargo run --release --bin hospital -- decrypt --model $model --patients $patient
    Сверка (демонстрационная): max|HE скор - открытый скор| = 4.2e-9; несовпадений порога: 0
    Сверка пройдена: max|err| < 1e-2, расхождений с порогом нет.
 ```
+**Альтернатива: inline JSON.** `--patients`/`--model` можно передать строкой.
+Важно: присваивания `$patients` и `$model` должны быть на **разных строках**
+(не склеивайте их — иначе PowerShell слепит один битый литерал), а сами значения —
+крайне желательно в одну строку:
+```powershell
+$patients = '[{"name":"P1","features":[0.50,0.40,0.20,0.30,0.00]},{"name":"P2","features":[0.80,0.70,0.50,0.60,1.00]},{"name":"P3","features":[0.10,0.20,0.10,0.10,0.00]},{"name":"P4","features":[0.70,0.90,0.70,0.80,1.00]},{"name":"P5","features":[0.30,0.60,0.30,0.50,0.00]}]'
+$model = '{"weights":[0.22,0.14,0.08,0.03,0.10],"intercept":-1.70,"threshold":-1.45}'
+```
+и использовать `--patients $patients --model $model` вместо путей к файлам — вывод тот же.
+
 Скоры и вердикты стабильны; `max|err|` — ориентировочно ~10⁻⁹ (шум CKKS случаен).
 Каталог `handoff/` генерируемый и в репозиторий не входит. Большие когорты — бенчмарком
 `cargo run --release --example bench` (N = 10/100/1000/10000, см. ниже).

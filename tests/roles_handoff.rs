@@ -63,8 +63,10 @@ fn role_utilities_end_to_end() {
     //    в шагах ниже — inline-строками (покрываем inline-режим).
     let model_file = dir.join("model.json");
     let patients_file = dir.join("patients.json");
-    std::fs::write(&model_file, json_model()).unwrap();
-    std::fs::write(&patients_file, json_patients()).unwrap();
+    // Пишем с UTF-8 BOM (как PowerShell 5.1 Set-Content -Encoding utf8) — парсер обязан это пережить.
+    let bom = "\u{feff}";
+    std::fs::write(&model_file, format!("{bom}{}", json_model())).unwrap();
+    std::fs::write(&patients_file, format!("{bom}{}", json_patients())).unwrap();
     let dirs = dir.join("handoff");
     let hosp_pk = dirs.join("hosp.pk.bin");
     let out = run(
