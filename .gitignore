@@ -11,6 +11,9 @@
 # это тяжёлые внешние артефакты, в репозиторий не входят.
 /vendor/
 
+# --- Handoff-файлы демо-утилит ролей (генерируются src/bin/{lab,server,hospital}) ---
+/handoff/
+
 # --- C/C++ / clang-cl / CMake artifacts ---
 *.obj
 *.o
