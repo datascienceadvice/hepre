@@ -59,6 +59,12 @@ fn role_utilities_end_to_end() {
     }
 
     // 2. Лаборатория шифрует фичи и формирует ReKeyGen.
+    //    JSON передаём путями к файлам (покрываем файловый режим resolve_json_arg);
+    //    в шагах ниже — inline-строками (покрываем inline-режим).
+    let model_file = dir.join("model.json");
+    let patients_file = dir.join("patients.json");
+    std::fs::write(&model_file, json_model()).unwrap();
+    std::fs::write(&patients_file, json_patients()).unwrap();
     let dirs = dir.join("handoff");
     let hosp_pk = dirs.join("hosp.pk.bin");
     let out = run(
@@ -67,9 +73,9 @@ fn role_utilities_end_to_end() {
         &[
             "encrypt",
             "--patients",
-            json_patients(),
+            patients_file.to_str().unwrap(),
             "--model",
-            json_model(),
+            model_file.to_str().unwrap(),
             "--hospital-pk",
             hosp_pk.to_str().unwrap(),
         ],
@@ -92,7 +98,13 @@ fn role_utilities_end_to_end() {
     let out = run(
         &dir,
         "hospital",
-        &["decrypt", "--model", json_model(), "--patients", json_patients()],
+        &[
+            "decrypt",
+            "--model",
+            model_file.to_str().unwrap(),
+            "--patients",
+            patients_file.to_str().unwrap(),
+        ],
     );
     let stdout = String::from_utf8_lossy(&out.stdout);
 

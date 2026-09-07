@@ -10,19 +10,19 @@ mod common;
 
 use std::path::PathBuf;
 
-use common::{ciphertexts_to_blobs, err_exit, make_context, parse_model, parse_patients, resolve_dir, write_handoff, KIND_FEATURES};
+use common::{ciphertexts_to_blobs, err_exit, make_context, parse_model, parse_patients, resolve_dir, resolve_json_arg, write_handoff, KIND_FEATURES};
 use hepre::scoring::{encrypt_features, ScoringModel};
 
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
     if args.is_empty() {
         eprintln!("Использование:");
-        eprintln!("  lab encrypt --patients '<json>' --model '<json>' --hospital-pk <file> [--dir DIR]");
+        eprintln!("  lab encrypt --patients '<json или путь к файлу>' --model '<json или путь к файлу>' --hospital-pk <file> [--dir DIR]");
         std::process::exit(2);
     }
     if args[0] == "help" || args[0] == "--help" || args[0] == "-h" {
         eprintln!("Использование:");
-        eprintln!("  lab encrypt --patients '<json>' --model '<json>' --hospital-pk <file> [--dir DIR]");
+        eprintln!("  lab encrypt --patients '<json или путь к файлу>' --model '<json или путь к файлу>' --hospital-pk <file> [--dir DIR]");
         std::process::exit(0);
     }
     if args[0] != "encrypt" {
@@ -30,11 +30,13 @@ fn main() {
     }
 
     let rest = &args[1..];
-    let patients_str = arg_after(rest, "--patients").unwrap_or_else(|| err_exit("lab encrypt: требуется --patients '<json>'"));
-    let model_str = arg_after(rest, "--model").unwrap_or_else(|| err_exit("lab encrypt: требуется --model '<json>'"));
+    let patients_raw = arg_after(rest, "--patients").unwrap_or_else(|| err_exit("lab encrypt: требуется --patients '<json или файл>'"));
+    let model_raw = arg_after(rest, "--model").unwrap_or_else(|| err_exit("lab encrypt: требуется --model '<json или файл>'"));
     let hosp_pk = arg_after(rest, "--hospital-pk").unwrap_or_else(|| err_exit("lab encrypt: требуется --hospital-pk <file>"));
     let dir = arg_after(rest, "--dir").map(|s| resolve_dir(&s)).unwrap_or_else(|| PathBuf::from("handoff"));
 
+    let patients_str = resolve_json_arg("--patients", &patients_raw).unwrap_or_else(|e| err_exit(e));
+    let model_str = resolve_json_arg("--model", &model_raw).unwrap_or_else(|e| err_exit(e));
     let model = parse_model(&model_str).unwrap_or_else(|e| err_exit(e));
     let patients = parse_patients(&patients_str).unwrap_or_else(|e| err_exit(e));
     let xs: Vec<Vec<f64>> = patients.iter().map(|p| p.features.clone()).collect();

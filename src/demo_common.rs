@@ -49,8 +49,37 @@ impl Default for Model {
     }
 }
 
+/// JSON-аргумент: принимается либо inline-строка, либо путь к существующему файлу,
+/// содержимое которого — JSON. Снимает пару внешних кавычек (`'`/`"`), которую
+/// мог оставить шелл.
+pub fn resolve_json_arg(flag: &str, arg: &str) -> Result<String, String> {
+    let s = strip_outer_quotes(arg);
+    let p = Path::new(s.trim());
+    if p.is_file() {
+        return fs::read_to_string(p)
+            .map_err(|e| format!("не удалось прочитать {flag} из файла {}: {e}", p.display()));
+    }
+    Ok(s.to_string())
+}
+
+fn strip_outer_quotes(s: &str) -> &str {
+    let b = s.as_bytes();
+    if s.len() >= 2
+        && ((b[0] == b'\'' && b[s.len() - 1] == b'\'') || (b[0] == b'"' && b[s.len() - 1] == b'"'))
+    {
+        &s[1..s.len() - 1]
+    } else {
+        s
+    }
+}
+
+fn parse_model_msg(e: serde_json::Error, raw: &str) -> String {
+    let preview = raw.chars().take(80).collect::<String>();
+    format!("не удалось разобрать --model JSON ({preview}...): {e}")
+}
+
 pub fn parse_model(s: &str) -> Result<Model, String> {
-    serde_json::from_str(s).map_err(|e| format!("не удалось разобрать --model JSON: {e}"))
+    serde_json::from_str(s).map_err(|e| parse_model_msg(e, s))
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -61,7 +90,8 @@ pub struct Patient {
 }
 
 pub fn parse_patients(s: &str) -> Result<Vec<Patient>, String> {
-    let mut v: Vec<Patient> = serde_json::from_str(s).map_err(|e| format!("не удалось разобрать --patients JSON: {e}"))?;
+    let mut v: Vec<Patient> = serde_json::from_str(s)
+        .map_err(|e| format!("не удалось разобрать --patients JSON ({}...): {e}", s.chars().take(80).collect::<String>()))?;
     for (i, p) in v.iter_mut().enumerate() {
         if p.name.is_empty() {
             p.name = format!("P{}", i + 1);

@@ -13,7 +13,7 @@ mod common;
 
 use std::path::PathBuf;
 
-use common::{err_exit, make_context, parse_model, parse_patients, read_handoff, resolve_dir, KIND_SCORES};
+use common::{err_exit, make_context, parse_model, parse_patients, read_handoff, resolve_dir, resolve_json_arg, KIND_SCORES};
 use hepre::scoring::decrypt_scores;
 
 fn main() {
@@ -34,7 +34,7 @@ fn main() {
 fn print_usage() {
     eprintln!("Использование:");
     eprintln!("  hospital keygen  [--dir DIR]");
-    eprintln!("  hospital decrypt --model '<json>' [--patients '<json>'] [--dir DIR]");
+    eprintln!("  hospital decrypt --model '<json или путь к файлу>' [--patients '<json или путь к файлу>'] [--dir DIR]");
 }
 
 fn dir_flag(args: &[String]) -> PathBuf {
@@ -72,8 +72,9 @@ fn cmd_decrypt(args: &[String]) {
         Some(idx) if idx + 1 < args.len() => resolve_dir(&args[idx + 1]),
         _ => PathBuf::from("handoff"),
     };
-    let model_str = arg_after(args, "--model").unwrap_or_else(|| err_exit("decrypt: требуется --model '<json>'"));
-    let patients_str = arg_after(args, "--patients");
+    let model_raw = arg_after(args, "--model").unwrap_or_else(|| err_exit("decrypt: требуется --model '<json или файл>'"));
+    let patients_raw = arg_after(args, "--patients");
+    let model_str = resolve_json_arg("--model", &model_raw).unwrap_or_else(|e| err_exit(e));
     let model = parse_model(&model_str).unwrap_or_else(|e| err_exit(e));
 
     let cc = make_context();
@@ -118,7 +119,8 @@ fn cmd_decrypt(args: &[String]) {
     println!("   Итог: пациентов = {}, риск у {}", n, n_risk);
 
     // Демонстрационная сверка точности (только если больнице передан --patients).
-    if let Some(ps) = patients_str {
+    if let Some(ps) = patients_raw {
+        let ps = resolve_json_arg("--patients", &ps).unwrap_or_else(|e| err_exit(e));
         let patients = parse_patients(&ps).unwrap_or_else(|e| err_exit(e));
         let mut max_err = 0.0f64;
         let mut mismatches = 0usize;

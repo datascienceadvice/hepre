@@ -199,9 +199,20 @@ cargo test
 Датасет (inline JSON) и модель (публичная) — те же, что в тестах A2:
 `[hba1c, glucose, bmi, age, family]`, порог `-1.45`.
 
+Параметры `--patients`/`--model` принимают **либо** inline JSON-строку,
+**либо** путь к файлу с JSON (надёжнее — нет проблем с кавычками в консоли).
+
 **Подготовка** (из корня репозитория; MSVC-рантайм в `PATH`, см. «Запуск тестов»):
 ```powershell
 cargo build --release --bins
+
+# JSON сохраняем в переменные PowerShell один раз (кавычки внутри сохраняются):
+$patients = '[{"name":"P1","features":[0.50,0.40,0.20,0.30,0.00]},
+              {"name":"P2","features":[0.80,0.70,0.50,0.60,1.00]},
+              {"name":"P3","features":[0.10,0.20,0.10,0.10,0.00]},
+              {"name":"P4","features":[0.70,0.90,0.70,0.80,1.00]},
+              {"name":"P5","features":[0.30,0.60,0.30,0.50,0.00]}]'
+$model = '{"weights":[0.22,0.14,0.08,0.03,0.10],"intercept":-1.70,"threshold":-1.45}'
 ```
 
 **1. Больница генерирует ключи** (`handoff/hosp.pk.bin` → лаборатории, `hosp.sk.bin` остаётся у больницы):
@@ -217,14 +228,7 @@ cargo run --release --bin hospital -- keygen
 
 **2. Лаборатория шифрует фичи пациентов и формирует ключ перешифрования**:
 ```powershell
-cargo run --release --bin lab -- encrypt `
-  --patients '[{"name":"P1","features":[0.50,0.40,0.20,0.30,0.00]},
-               {"name":"P2","features":[0.80,0.70,0.50,0.60,1.00]},
-               {"name":"P3","features":[0.10,0.20,0.10,0.10,0.00]},
-               {"name":"P4","features":[0.70,0.90,0.70,0.80,1.00]},
-               {"name":"P5","features":[0.30,0.60,0.30,0.50,0.00]}]' `
-  --model '{"weights":[0.22,0.14,0.08,0.03,0.10],"intercept":-1.70,"threshold":-1.45}' `
-  --hospital-pk handoff\hosp.pk.bin
+cargo run --release --bin lab -- encrypt --patients $patients --model $model --hospital-pk handoff\hosp.pk.bin
 ```
 ```
 --- Лаборатория: шифрование фичей пациентов ---
@@ -237,8 +241,7 @@ cargo run --release --bin lab -- encrypt `
 
 **3. Сервер считает скор гомоморфно и перешифровывает его на ключ больницы (PRE)**:
 ```powershell
-cargo run --release --bin server -- score `
-  --model '{"weights":[0.22,0.14,0.08,0.03,0.10],"intercept":-1.70,"threshold":-1.45}'
+cargo run --release --bin server -- score --model $model
 ```
 ```
 --- Сервер: гомоморфный расчёт скора и PRE ---
@@ -255,13 +258,7 @@ cargo run --release --bin server -- score `
 (`--patients` — только для демонстрационной сверки точности; в реальном протоколе
 больница фичи пациентов не видит):
 ```powershell
-cargo run --release --bin hospital -- decrypt `
-  --model '{"weights":[0.22,0.14,0.08,0.03,0.10],"intercept":-1.70,"threshold":-1.45}' `
-  --patients '[{"name":"P1","features":[0.50,0.40,0.20,0.30,0.00]},
-               {"name":"P2","features":[0.80,0.70,0.50,0.60,1.00]},
-               {"name":"P3","features":[0.10,0.20,0.10,0.10,0.00]},
-               {"name":"P4","features":[0.70,0.90,0.70,0.80,1.00]},
-               {"name":"P5","features":[0.30,0.60,0.30,0.50,0.00]}]'
+cargo run --release --bin hospital -- decrypt --model $model --patients $patients
 ```
 ```
 --- Больница: расшифровка скоров и порог риска ---

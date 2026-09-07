@@ -12,19 +12,19 @@ mod common;
 use std::path::PathBuf;
 use std::time::Instant;
 
-use common::{blobs_to_ciphertexts, err_exit, make_context, parse_model, read_handoff, resolve_dir, write_handoff, KIND_FEATURES, KIND_SCORES};
+use common::{blobs_to_ciphertexts, err_exit, make_context, parse_model, read_handoff, resolve_dir, resolve_json_arg, write_handoff, KIND_FEATURES, KIND_SCORES};
 use hepre::scoring::{compute_score, transfer_score, EncodedFeatures, ScoringModel};
 
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
     if args.is_empty() {
         eprintln!("Использование:");
-        eprintln!("  server score --model '<json>' [--dir DIR]");
+        eprintln!("  server score --model '<json или путь к файлу>' [--dir DIR]");
         std::process::exit(2);
     }
     if args[0] == "help" || args[0] == "--help" || args[0] == "-h" {
         eprintln!("Использование:");
-        eprintln!("  server score --model '<json>' [--dir DIR]");
+        eprintln!("  server score --model '<json или путь к файлу>' [--dir DIR]");
         std::process::exit(0);
     }
     if args[0] != "score" {
@@ -32,8 +32,9 @@ fn main() {
     }
 
     let rest = &args[1..];
-    let model_str = arg_after(rest, "--model").unwrap_or_else(|| err_exit("server score: требуется --model '<json>'"));
+    let model_raw = arg_after(rest, "--model").unwrap_or_else(|| err_exit("server score: требуется --model '<json или файл>'"));
     let dir = arg_after(rest, "--dir").map(|s| resolve_dir(&s)).unwrap_or_else(|| PathBuf::from("handoff"));
+    let model_str = resolve_json_arg("--model", &model_raw).unwrap_or_else(|e| err_exit(e));
     let model = parse_model(&model_str).unwrap_or_else(|e| err_exit(e));
 
     let cc = make_context();
