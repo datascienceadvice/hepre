@@ -52,12 +52,12 @@ BSD-2-Clause, репозиторий `https://github.com/datascienceadvice/hepre
 
 | Пункт | D/E | Где адресовано в HEPRE | Статус |
 |---|---|---|---|
-| 1. Title | D;E | `README.md`; `CITATION.cff` (`title`); `design.txt` | ⚠️ формулировку нужно уточнить как «разработка и оценка модели на синтетической когорте + реализация под HE» |
+| 1. Title | D;E | `README.md`; `CITATION.cff` (`title`); `docs/STUDY_PROTOCOL.md` | ⚠️ формулировку нужно уточнить как «разработка и оценка модели на синтетической когорте + реализация под HE» |
 | 2. Abstract | D;E | `CITATION.cff` (`abstract`) — но это аннотация ПО, а не структурированное резюме исследования | ❌ |
-| 3a. Background: контекст и обоснование | D;E | `design.txt` §1 (чувствительные лабораторные данные, утечки, ФИИС/152-ФЗ), §2 | ⚠️ |
-| 3b. Background: популяция, назначение, пользователи | D;E | `design.txt` (страховой/лабораторный скоринг); `README.md` §«Этап A2» (лаборатория/сервер/больница) | ✅ |
+| 3a. Background: контекст и обоснование | D;E | `docs/STUDY_PROTOCOL.md` §1 (чувствительные лабораторные данные, утечки, ФИИС/152-ФЗ), §2 | ⚠️ |
+| 3b. Background: популяция, назначение, пользователи | D;E | `docs/STUDY_PROTOCOL.md` (страховой/лабораторный скоринг); `README.md` §«Этап A2» (лаборатория/сервер/больница) | ✅ |
 | 3c. Background: неравенства между группами | D;E | не рассматриваются; пол/этническая принадлежность не моделируются (`docs/DATA_DICTIONARY.md` §2) | ❌ |
-| 4. Objectives | D;E | `design.txt` §1; `README.md`; `CITATION.cff` (`abstract`) | ✅ |
+| 4. Objectives | D;E | `docs/STUDY_PROTOCOL.md` §1; `README.md`; `CITATION.cff` (`abstract`) | ✅ |
 | 5a. Data: источники и репрезентативность | D;E | `docs/DATA_DICTIONARY.md` §1 (синтетический генератор, явный DGP); репрезентативность **не** заявляется | ✅ |
 | 5b. Data: даты набора | D;E | сбора данных не было; `manifest.json` (`utc_start`/`utc_end`) фиксирует дату **прогона** | ➖ |
 | 6a. Participants: условия, число центров | D;E | центров нет (прототип, файловый handoff); `README.md` §«Пример использования» | ➖ |
@@ -67,7 +67,7 @@ BSD-2-Clause, репозиторий `https://github.com/datascienceadvice/hepre
 | 8a. Outcome: определение и горизонт | D;E | Исход определён как синтетическая Bernoulli-величина `y ~ Bernoulli(σ(η))` (`src/cohort.rs`); клинического горизонта нет | ⚠️ суррогатный/синтетический исход — указывать прямо |
 | 8b. Outcome: квалификация оценщиков | D;E | субъективной оценки исхода нет (генерируется программно) | ➖ |
 | 8c. Outcome: ослепление | D;E | не применимо к генератору | ➖ |
-| 9a. Predictors: выбор предикторов | D | `docs/DATA_DICTIONARY.md` §2 (7 рутинных предикторов); `default_t2dm_config()` в `src/cohort.rs`; `design.txt` | ✅ (обоснование — общепринятые предикторы; формального обзора литературы в репозитории нет) |
+| 9a. Predictors: выбор предикторов | D | `docs/DATA_DICTIONARY.md` §2 (7 рутинных предикторов); `default_t2dm_config()` в `src/cohort.rs`; `docs/STUDY_PROTOCOL.md` | ✅ (обоснование — общепринятые предикторы; формального обзора литературы в репозитории нет) |
 | 9b. Predictors: определение и измерение | D;E | `docs/DATA_DICTIONARY.md` §2 (единицы, распределения, `beta_true`) | ✅ |
 | 9c. Predictors: квалификация оценщиков | D;E | субъективной интерпретации нет | ➖ |
 | 10. Sample size: расчёт | D;E | Дизайн задаёт `n_derivation = 8 000`, `n_validation = 4 000`, `prevalence_calibration_n = 200 000`, `target_prevalence = 0.12` (`src/cohort.rs`); обоснование строится на **эквивалентности** — `SampleSizeJustification` в `src/study.rs` (`validation_n`, `equivalence_margin`, `alpha`, верхняя граница 95 % ДИ при нуле расхождений, допустимое число расхождений). Классического расчёта мощности нет | ⚠️ |
@@ -86,7 +86,7 @@ BSD-2-Clause, репозиторий `https://github.com/datascienceadvice/hepre
 | 17. Ethical approval | D;E | Одобрения нет и не требуется: реальных участников и персональных данных нет (`SECURITY.md`, `docs/DATA_DICTIONARY.md`) | ➖ — в отчёте указать прямо |
 | 18a. Funding | D;E | нет сведений | ❌ |
 | 18b. Conflicts of interest | D;E | нет раздела | ❌ |
-| 18c. Protocol | D;E | `design.txt` (внутреннее ТЗ/план); публичного протокола нет | ⚠️ |
+| 18c. Protocol | D;E | `docs/STUDY_PROTOCOL.md` (внутреннее ТЗ/план); публичного протокола нет | ⚠️ |
 | 18d. Registration | D;E | не регистрировалось | ❌ (указать «не зарегистрировано») |
 | 18e. Data sharing | D;E | Генератор когорты в дереве (`src/cohort.rs`, `src/rng.rs`, `src/detmath.rs`); артефакт `cohort.csv` появится в `results/<run-id>/` | ⚠️ |
 | 18f. Code sharing | D;E | Весь код в репозитории, лицензия BSD-2-Clause (`LICENSE`, `Cargo.toml`, `CITATION.cff`); `CONTRIBUTING.md` | ✅ |
@@ -99,11 +99,11 @@ BSD-2-Clause, репозиторий `https://github.com/datascienceadvice/hepre
 | 23a. Model performance с интервалами | D;E | Интервальные и эквивалентностные процедуры реализованы (`src/stats.rs`: ДеЛонг, Вильсон, Клоппера—Пирсона, бутстрап, МакНемар, `discordance_equivalence`), раннер собирает их в `clinical_performance`; **значения пока не получены** | ⚠️ (до прогона раннера — фактически ❌) |
 | 23b. Performance: гетерогенность кластеров | D;E | кластеров нет | ➖ |
 | 24. Model updating | E | не выполняется | ➖ |
-| 25. Interpretation | D;E | `design.txt` §6; `README.md` §«Этап A2»/§«Бенчмарк» (масштабирование, стоимость) | ⚠️ |
+| 25. Interpretation | D;E | `docs/STUDY_PROTOCOL.md` §6; `README.md` §«Этап A2»/§«Бенчмарк» (масштабирование, стоимость) | ⚠️ |
 | 26. Limitations | D;E | `README.md` §«Известные ограничения прототипа»; `SECURITY.md` (9 пунктов ограничений); `docs/THREAT_MODEL.md` §7/§9; `docs/REPRODUCIBILITY.md` §9 | ✅ |
 | 27a. Usability: качество/наличие входных данных | D | `docs/DATA_DICTIONARY.md` §7 (валидация, пропуски, единицы) | ⚠️ |
 | 27b. Usability: взаимодействие и квалификация пользователей | D | Роли и CLI документированы (`README.md`); квалификация пользователей не обсуждается | ❌ |
-| 27c. Usability: дальнейшие шаги | D;E | `design.txt` §6–§7; `docs/THREAT_MODEL.md` §10 | ✅ |
+| 27c. Usability: дальнейшие шаги | D;E | `docs/STUDY_PROTOCOL.md` §6–§7; `docs/THREAT_MODEL.md` §10 | ✅ |
 
 ---
 
@@ -122,8 +122,8 @@ BSD-2-Clause, репозиторий `https://github.com/datascienceadvice/hepre
 |---|---|---|
 | 1. Идентификация как исследования точности | метрики точности предусмотрены (`src/stats.rs`), но это оценка на синтетике | ➖ |
 | 2. Структурированное резюме | нет | ❌ |
-| 3. Клинический фон и роль index test | `design.txt` §1–§2 | ⚠️ |
-| 4. Цели и гипотезы | `design.txt` §1 | ✅ |
+| 3. Клинический фон и роль index test | `docs/STUDY_PROTOCOL.md` §1–§2 | ⚠️ |
+| 4. Цели и гипотезы | `docs/STUDY_PROTOCOL.md` §1 | ✅ |
 | 5. Проспективный/ретроспективный дизайн | данные генерируются, сбора не было | ➖ |
 | 6. Критерии включения | `docs/DATA_DICTIONARY.md` §2 (границы усечения — по построению) | ⚠️ |
 | 7. Основа идентификации участников | генератор когорты | ➖ |
@@ -150,7 +150,7 @@ BSD-2-Clause, репозиторий `https://github.com/datascienceadvice/hepre
 | 24. Точность с 95% ДИ | интервальные процедуры реализованы (`stats.rs`); значения — из `results.json` | ⚠️ |
 | 25. Нежелательные события | нет | ➖ |
 | 26. Ограничения | `README.md`, `SECURITY.md`, `docs/THREAT_MODEL.md` §7 | ✅ |
-| 27. Импликации для практики | `design.txt` §6–§7 | ⚠️ |
+| 27. Импликации для практики | `docs/STUDY_PROTOCOL.md` §6–§7 | ⚠️ |
 | 28. Регистрация | нет | ❌ |
 | 29. Доступ к протоколу | публичного протокола нет | ❌ |
 | 30. Финансирование и роль фондов | нет | ❌ |
@@ -172,7 +172,7 @@ BSD-2-Clause, репозиторий `https://github.com/datascienceadvice/hepre
 | Пункт | Где адресовано | Статус |
 |---|---|---|
 | 1. Title (ранняя клиническая оценка AI-системы) | нет такой формулировки | ❌/➖ |
-| 2. Intended use: состояние, решение, пользователи, контекст | `design.txt` §1–§2; `README.md` §«Этап A2»; `CITATION.cff` (`abstract`) | ✅ |
+| 2. Intended use: состояние, решение, пользователи, контекст | `docs/STUDY_PROTOCOL.md` §1–§2; `README.md` §«Этап A2»; `CITATION.cff` (`abstract`) | ✅ |
 | 3. Participants: рекрутинг пациентов и пользователей | нет | ➖ |
 | 4. AI system: тип алгоритма, данные, входы/выходы, версия | `docs/DATA_DICTIONARY.md` §2–§3; `src/logistic.rs`; `src/poly.rs`; версия — `CITATION.cff` (`version`) и git-ревизия в `manifest.json` | ✅ |
 | 5. Implementation: интеграция в клинический процесс | нет | ➖ |
@@ -185,10 +185,10 @@ BSD-2-Clause, репозиторий `https://github.com/datascienceadvice/hepre
 | 12. Human–computer agreement / override | нет | ➖ |
 | 13. Safety and errors: перечень инцидентов | нет | ➖ |
 | 14. Human factors: юзабилити и кривые обучения | нет | ➖ |
-| 15. Support for intended use | `design.txt` §6; границы — `docs/THREAT_MODEL.md` §7 | ⚠️ |
+| 15. Support for intended use | `docs/STUDY_PROTOCOL.md` §6; границы — `docs/THREAT_MODEL.md` §7 | ⚠️ |
 | 16. Safety and errors: профиль безопасности | `SECURITY.md`, `docs/THREAT_MODEL.md` §7 — это ИБ-безопасность, не patient safety | ⚠️ |
 | 17. Data availability: доступность данных и кода | Код — репозиторий (BSD-2-Clause); данные генерируются (`src/cohort.rs`) и попадают в `results/<run-id>/cohort.csv` | ✅ |
-| Общие I–X (Abstract, Objectives, Research governance, Outcomes, Analysis, Patient involvement, Main results, Subgroups, Strengths/limitations, COI) | Objectives — `design.txt` §1; Outcomes — синтетический `outcome`; Analysis — `src/stats.rs`; Strengths/limitations — `README.md`, `SECURITY.md`, `docs/*`; Abstract, Research governance, Patient involvement, Subgroups, COI — отсутствуют | смешанно; фиксировать прямо |
+| Общие I–X (Abstract, Objectives, Research governance, Outcomes, Analysis, Patient involvement, Main results, Subgroups, Strengths/limitations, COI) | Objectives — `docs/STUDY_PROTOCOL.md` §1; Outcomes — синтетический `outcome`; Analysis — `src/stats.rs`; Strengths/limitations — `README.md`, `SECURITY.md`, `docs/*`; Abstract, Research governance, Patient involvement, Subgroups, COI — отсутствуют | смешанно; фиксировать прямо |
 
 ---
 
@@ -205,8 +205,8 @@ CONSORT 2010 для отчётов о **рандомизированных кл�
 | Пункт | Где адресовано | Статус |
 |---|---|---|
 | 1a,b (i) **(E)** AI-идентификация и тип модели | `README.md`; `CITATION.cff` (`abstract`: CKKS/BFV + INDCPA-PRE, линейный скор) | ⚠️ (нет «trial»-контекста) |
-| 1a,b (ii) **(E)** Intended use | `design.txt` §1 | ⚠️ |
-| 2a (i) Intended use в клиническом пути | `design.txt` §1–§2; `README.md` §«Этап A2» | ✅ |
+| 1a,b (ii) **(E)** Intended use | `docs/STUDY_PROTOCOL.md` §1 | ⚠️ |
+| 2a (i) Intended use в клиническом пути | `docs/STUDY_PROTOCOL.md` §1–§2; `README.md` §«Этап A2» | ✅ |
 | 4a (i) **(E)** Критерии включения участников | по построению (`docs/DATA_DICTIONARY.md` §2) | ➖ |
 | 4a (ii) Критерии на уровне **входных данных** | `docs/DATA_DICTIONARY.md` §2 (единицы, диапазоны), §2.1 (стандартизация), §7 (пропуски/выбросы) | ⚠️ |
 | 4b Интеграция интервенции в условия | нет РКИ | ➖ |
@@ -232,7 +232,7 @@ Gebru T., et al. *Datasheets for Datasets* (arXiv:1803.09010). Формальн�
 | Раздел Model Card | Где адресовано | Статус |
 |---|---|---|
 | Model Details (тип, версия, владелец) | Логистическая регрессия на стандартизованных признаках (`src/logistic.rs`); многочленная аппроксимация σ (`src/poly.rs`); линейный скор в CKKS (`src/scoring.rs`); версия — `CITATION.cff`, git-ревизия в `manifest.json` | ✅ |
-| Intended Use (назначение, пользователи, ограничения) | `design.txt` §1–§2; ограничения — `SECURITY.md`, `docs/THREAT_MODEL.md` §7 | ✅ |
+| Intended Use (назначение, пользователи, ограничения) | `docs/STUDY_PROTOCOL.md` §1–§2; ограничения — `SECURITY.md`, `docs/THREAT_MODEL.md` §7 | ✅ |
 | Factors (релевантные группы/условия) | Пол, этническая принадлежность, терапия не моделируются (`docs/DATA_DICTIONARY.md` §2) | ❌ |
 | Metrics (метрики оценки) | `src/stats.rs` (AUC + ДеЛонг, чувствительность/специфичность, PPV/NPV, F1, MCC, каппа, Brier, калибровка, МакНемар, бутстрап); для HE — `max\|err\|`, `binMis` | ⚠️ код есть, значения — в `results/<run-id>/results.json` |
 | Evaluation Data | `validation`-часть синтетической когорты (`Cohort::validation`, `n_validation = 4 000`), `cohort.csv` | ⚠️ |
@@ -259,7 +259,7 @@ Gebru T., et al. *Datasheets for Datasets* (arXiv:1803.09010). Формальн�
 
 | Область | Статус |
 |---|---|
-| Описание системы и протокола (роли, формулы, формат файлов, параметры) | ✅ `README.md`, `design.txt`, `docs/DATA_DICTIONARY.md` |
+| Описание системы и протокола (роли, формулы, формат файлов, параметры) | ✅ `README.md`, `docs/STUDY_PROTOCOL.md`, `docs/DATA_DICTIONARY.md` |
 | Процесс порождения данных и разбиение выборки | ✅ `src/cohort.rs`, `docs/DATA_DICTIONARY.md` §1–§2 |
 | Разработка модели (тип, регуляризация, стандартизация, сходимость) | ✅ `src/logistic.rs` |
 | Метрики и интервальные оценки | ⚠️ реализованы (`src/stats.rs`), артефакты прогона отсутствуют |
