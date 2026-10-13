@@ -4,6 +4,12 @@ version = "0.1.0"
 edition = "2021"
 description = "Rust cxx wrapper over OpenFHE (CKKS/BFV + PRE) for private clinical diagnostics scoring"
 license = "BSD-2-Clause"
+repository = "https://github.com/datascienceadvice/hepre"
+readme = "README.md"
+keywords = ["homomorphic-encryption", "ckks", "proxy-re-encryption", "openfhe", "privacy"]
+categories = ["cryptography", "science"]
+rust-version = "1.70"
+exclude = ["paper/"]
 
 [lib]
 name = "hepre"

@@ -1,0 +1,62 @@
+{
+  "artifacts": [
+    {
+      "bytes": 1691833,
+      "file": "cohort.csv",
+      "sha256": "7c3eb44cc829d2064dc788d3fb335b5965033368b26aec979266b2c0392c79f5"
+    },
+    {
+      "bytes": 843,
+      "file": "model.json",
+      "sha256": "b48d841dd5a2e2fff6dec7d1ab8f19a9482c12f823fbb7eb36d2c29085a6059e"
+    },
+    {
+      "bytes": 104034,
+      "file": "roc_curve.csv",
+      "sha256": "be32bbe2dce688ded0ae8b5eca5e025e04b57f5cf72dd046250749da60762b96"
+    },
+    {
+      "bytes": 348,
+      "file": "calibration_deciles.csv",
+      "sha256": "02261c50d188b5ccf6e5fafe9a8cb2c804cbdb547895ccf111ce4b7d353d6667"
+    },
+    {
+      "bytes": 325,
+      "file": "polynomial_sweep.csv",
+      "sha256": "343a7688f12574234e5881f5d21f7506a952a47eb6858d713859a6bec1766b8b"
+    },
+    {
+      "bytes": 180,
+      "file": "polynomial_coefficients.csv",
+      "sha256": "a3ecf97cc29fb80907a496224498595a68060f2e1a7eba43fa2b0eff056e6f38"
+    },
+    {
+      "bytes": 721,
+      "file": "scalability.csv",
+      "sha256": "a2fa94053ec91d0f05578a1ae8b4dd109c4bca9aa01929e0f59076d30816f4f0"
+    },
+    {
+      "bytes": 22399,
+      "file": "results.json",
+      "sha256": "5b2c88ba812cbbda3efe06da3c4b8681dbc216e04747775264b7af85468fa24f"
+    },
+    {
+      "bytes": 389,
+      "file": "environment.json",
+      "sha256": "94ca98756983dc820b3ce09b4ca34b0f66f8e888372d39fa1b8e5bfb5def084e"
+    },
+    {
+      "bytes": 3893,
+      "file": "config.json",
+      "sha256": "21eb67fea43cc07259911c82a7991abe84911c4c616df15ea5d9761178353666"
+    }
+  ],
+  "duration_seconds": 156.4330579,
+  "finished_utc": "2026-10-12T11:36:42Z",
+  "git_branch": "master",
+  "git_revision": "4659cac3e24537fb99fb3a25c4fd98df28ff4f3f",
+  "run_id": "20261012-113406_4659cac3",
+  "rustc_version": "rustc 1.97.0 (2d8144b78 2026-07-07)",
+  "started_utc": "2026-10-12T11:34:06Z",
+  "study_name": "HEPRE: приватный скоринг риска СД2 (CKKS + PRE)"
+}

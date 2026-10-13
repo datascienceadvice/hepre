@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="900" viewBox="0 0 1040 900" role="img" aria-labelledby="figTitle figDesc">
+  <title id="figTitle">Движение данных в протоколе приватного скоринга HEPRE</title>
+  <desc id="figDesc">Схема из трёх дорожек: лаборатория шифрует стандартизованные признаки под своим ключом и выпускает ключ перешифрования; сервер считает логит и вероятность гомоморфно и меняет владельца шифротекста через ReEncrypt; больница расшифровывает только итог своим ключом.</desc>
+
+  <defs>
+    <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/>
+    </marker>
+    <marker id="arwBlue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#1d4ed8"/>
+    </marker>
+    <marker id="arwGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#047857"/>
+    </marker>
+  </defs>
+
+  <style>
+    .h1   { font: bold 20px "Segoe UI", Arial, sans-serif; fill: #0f172a; }
+    .h2   { font: 12.5px "Segoe UI", Arial, sans-serif; fill: #475569; }
+    .lane { font: bold 13.5px "Segoe UI", Arial, sans-serif; fill: #0f172a; }
+    .step { font: bold 12.5px "Segoe UI", Arial, sans-serif; fill: #0f172a; }
+    .body { font: 11.5px "Segoe UI", Arial, sans-serif; fill: #1e293b; }
+    .note { font: italic 10.5px "Segoe UI", Arial, sans-serif; fill: #475569; }
+    .tlab { font: bold 11.5px "Segoe UI", Arial, sans-serif; fill: #1d4ed8; }
+    .thos { font: bold 11.5px "Segoe UI", Arial, sans-serif; fill: #047857; }
+    .tpln { font: bold 11.5px "Segoe UI", Arial, sans-serif; fill: #b45309; }
+    .cap  { font: 11.5px "Segoe UI", Arial, sans-serif; fill: #334155; }
+    .num  { font: bold 12px "Segoe UI", Arial, sans-serif; fill: #ffffff; }
+  </style>
+
+  <rect x="0" y="0" width="1040" height="900" fill="#ffffff"/>
+
+  <text class="h1" x="30" y="36">Рисунок 1. Движение данных: где шифруется и где меняется владелец</text>
+  <text class="h2" x="30" y="58">Шифрование у источника · вычисление на шифротекстах · смена владельца через прокси-перешифрование · расшифровка только итога</text>
+
+  <!-- ================= дорожки ================= -->
+  <rect x="30"  y="80" width="310" height="42" rx="8" fill="#eff6ff" stroke="#93c5fd" stroke-width="1.5"/>
+  <rect x="360" y="80" width="310" height="42" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+  <rect x="690" y="80" width="310" height="42" rx="8" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5"/>
+  <text class="lane" x="185" y="106" text-anchor="middle">ЛАБОРАТОРИЯ · источник данных</text>
+  <text class="lane" x="515" y="106" text-anchor="middle">СЕРВЕР · вычислитель</text>
+  <text class="lane" x="845" y="106" text-anchor="middle">БОЛЬНИЦА · потребитель</text>
+
+  <line x1="185" y1="122" x2="185" y2="682" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="5 5"/>
+  <line x1="515" y1="122" x2="515" y2="682" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="5 5"/>
+  <line x1="845" y1="122" x2="845" y2="682" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="5 5"/>
+
+  <!-- ================= 0. публичный ключ ================= -->
+  <line x1="838" y1="154" x2="192" y2="154" stroke="#334155" stroke-width="1.8" marker-end="url(#arw)"/>
+  <text class="cap" x="515" y="147" text-anchor="middle">0. hosp.pk — публичный ключ больницы (открыто, ключ расшифровки остаётся у больницы)</text>
+
+  <!-- ================= 1. шифрование ================= -->
+  <rect x="40" y="176" width="290" height="60" rx="7" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+  <circle cx="58" cy="196" r="9" fill="#3b82f6"/><text class="num" x="58" y="200" text-anchor="middle">1</text>
+  <text class="step" x="76" y="200">Стандартизация и шифрование</text>
+  <text class="body" x="52" y="219">z = (x−μ)/σ ; признак → шифротекст, пациент → слот</text>
+  <text class="note" x="52" y="233">μ, σ и веса публичны — это метаданные модели, не данные</text>
+
+  <!-- ================= 2. ключ перешифрования ================= -->
+  <rect x="40" y="248" width="290" height="60" rx="7" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+  <circle cx="58" cy="268" r="9" fill="#3b82f6"/><text class="num" x="58" y="272" text-anchor="middle">2</text>
+  <text class="step" x="76" y="272">Ключи: перешифрования и умножения</text>
+  <text class="body" x="52" y="291">ReKeyGen(lab_sk → hosp_pk); EvalMultKeyGen(lab_sk)</text>
+  <text class="note" x="52" y="305">ни один из них не позволяет расшифровать шифротекст</text>
+
+  <!-- ================= передача лаб → сервер ================= -->
+  <line x1="192" y1="334" x2="508" y2="334" stroke="#1d4ed8" stroke-width="2" marker-end="url(#arwBlue)"/>
+  <text class="tlab" x="350" y="327" text-anchor="middle">features.cts + rekey.ek + ключ умножения</text>
+  <text class="note" x="350" y="349" text-anchor="middle">сырые показатели не покидают лабораторию</text>
+
+  <!-- ================= 3. логит ================= -->
+  <rect x="370" y="368" width="290" height="60" rx="7" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1.5"/>
+  <circle cx="388" cy="388" r="9" fill="#64748b"/><text class="num" x="388" y="392" text-anchor="middle">3</text>
+  <text class="step" x="406" y="392">Гомоморфный логит</text>
+  <text class="body" x="382" y="411">η = b + Σ wⱼ · Enc(zⱼ)</text>
+  <text class="note" x="382" y="425">умножение на плейнтекст и сложение: глубина не тратится</text>
+
+  <!-- ================= 4. сигмоида ================= -->
+  <rect x="370" y="440" width="290" height="60" rx="7" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1.5"/>
+  <circle cx="388" cy="460" r="9" fill="#64748b"/><text class="num" x="388" y="464" text-anchor="middle">4</text>
+  <text class="step" x="406" y="464">Гомоморфная сигмоида</text>
+  <text class="body" x="382" y="483">p = ½ + P(η/B) — нечётный многочлен</text>
+  <text class="note" x="382" y="497">степень 11, глубина 4; знак решения сохранён</text>
+
+  <!-- ================= 5. смена владельца ================= -->
+  <rect x="360" y="512" width="310" height="72" rx="7" fill="#fef3c7" stroke="#f59e0b" stroke-width="2.5"/>
+  <circle cx="378" cy="532" r="9" fill="#b45309"/><text class="num" x="378" y="536" text-anchor="middle">5</text>
+  <text class="step" x="396" y="536">ReEncrypt — СМЕНА ВЛАДЕЛЬЦА</text>
+  <text class="body" x="372" y="555">шифротекст лаборатории → шифротекст больницы</text>
+  <text class="note" x="372" y="569">секретные ключи не двигаются; сервер не может расшифровать</text>
+  <text class="note" x="372" y="581">ни до, ни после этого шага</text>
+
+  <!-- ================= передача сервер → больница ================= -->
+  <line x1="508" y1="610" x2="838" y2="610" stroke="#047857" stroke-width="2" marker-end="url(#arwGreen)"/>
+  <text class="thos" x="673" y="603" text-anchor="middle">scores.ct — перешифровано на ключ больницы</text>
+  <text class="note" x="673" y="625" text-anchor="middle">режим B: только вероятность · режим A: непрерывный логит</text>
+
+  <!-- ================= 6. расшифровка ================= -->
+  <rect x="700" y="644" width="290" height="60" rx="7" fill="#d1fae5" stroke="#10b981" stroke-width="1.5"/>
+  <circle cx="718" cy="664" r="9" fill="#047857"/><text class="num" x="718" y="668" text-anchor="middle">6</text>
+  <text class="step" x="736" y="668">Расшифровка ключом hosp_sk</text>
+  <text class="body" x="712" y="687">решение: p ≥ ½ (режим B) или η ≥ 0 (режим A)</text>
+  <text class="note" x="712" y="701">чужим ключом — мусор либо отказ Decode (fail-closed)</text>
+
+  <!-- ================= что видит каждая сторона ================= -->
+  <rect x="30"  y="722" width="310" height="104" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+  <rect x="360" y="722" width="310" height="104" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+  <rect x="690" y="722" width="310" height="104" rx="8" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+
+  <text class="step" x="44" y="742">Что видит лаборатория</text>
+  <text class="body" x="44" y="761">• сырые показатели пациентов</text>
+  <text class="body" x="44" y="778">• свои секретные ключи</text>
+  <text class="body" x="44" y="795">• метаданные модели (μ, σ, веса)</text>
+  <text class="body" x="44" y="812">• владелец данных: от неё ничего не скрыто</text>
+
+  <text class="step" x="374" y="742">Что видит сервер</text>
+  <text class="body" x="374" y="761">• только шифротексты</text>
+  <text class="body" x="374" y="778">• ключ перешифрования и умножения</text>
+  <text class="body" x="374" y="795">• НЕ видит показателей пациентов</text>
+  <text class="body" x="374" y="812">• НЕ имеет ключей расшифровки</text>
+
+  <text class="step" x="704" y="742">Что видит больница</text>
+  <text class="body" x="704" y="761">• только вероятность (режим B)</text>
+  <text class="body" x="704" y="778">• свой секретный ключ</text>
+  <text class="body" x="704" y="795">• НЕ видит показателей пациентов</text>
+  <text class="body" x="704" y="812">• НЕ видит логит в режиме B</text>
+
+  <!-- ================= легенда ================= -->
+  <rect x="30" y="846" width="16" height="16" rx="3" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+  <text class="cap" x="54" y="859">шифротекст под ключом лаборатории</text>
+
+  <rect x="300" y="846" width="16" height="16" rx="3" fill="#d1fae5" stroke="#10b981" stroke-width="1.5"/>
+  <text class="cap" x="324" y="859">шифротекст под ключом больницы</text>
+
+  <rect x="560" y="846" width="16" height="16" rx="3" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+  <text class="cap" x="584" y="859">ключевой шаг: смена владельца (PRE)</text>
+
+  <rect x="820" y="846" width="16" height="16" rx="3" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text class="cap" x="844" y="859">объёмы видимости сторон</text>
+</svg>

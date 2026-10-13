@@ -4,7 +4,7 @@ use hepre::scoring::{
     compute_score, decrypt_scores, encrypt_features, scoring_context, transfer_score, EncodedFeatures,
     ScoringModel,
 };
-use hepre::{CkksParams, Context, PublicKey, SecretKey};
+use hepre::{CkksParams, Context};
 
 // Небольшая синтетическая модель "риска диабета": 3 признака.
 fn model() -> ScoringModel {

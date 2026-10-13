@@ -1,0 +1,253 @@
+MSVC / clang-cl compatibility patch set for OpenFHE 1.5.1.
+
+Base revision: ed361af22049007db2107e7c69bcff209e8c420d
+Generated with: git diff HEAD --ignore-submodules=all  (from the OpenFHE tree)
+
+Apply from the OpenFHE source root:
+    git apply patches/openfhe-1.5.1-msvc.patch
+
+Rationale for each change is documented in README.md. In short: OpenFHE
+upstream refuses to build with MSVC (`#error` guard) and uses GNU-specific
+constructs (`__attribute__((deprecated))` in trailing position, `__builtin_ctz`,
+`__int128`). clang-cl shares the MSVC ABI, so the tree is adapted rather than
+ported. One change is a genuine correctness fix that matters for this project:
+`CiphertextImpl<DCRTPoly>::SetLevel` must cast to
+`const CryptoParametersCKKSRNS`, otherwise the shared_ptr destructor frees the
+crypto parameters while the context still references them, which corrupts the
+heap in CKKS `Encrypt` (0xC0000374).
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 3a3d5e4..759270b 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -159,8 +159,13 @@ if("${isSystemDir}" STREQUAL "-1")
+ endif("${isSystemDir}" STREQUAL "-1")
+ 
+ # Compiler flags
+-set(C_COMPILE_FLAGS "-Wall -Werror -DOPENFHE_VERSION=${OPENFHE_VERSION}")
+-set(CXX_COMPILE_FLAGS "-Wall -Werror -DOPENFHE_VERSION=${OPENFHE_VERSION}")
++if(MSVC)
++    set(C_COMPILE_FLAGS "/DOPENFHE_VERSION=\"${OPENFHE_VERSION}\" /D_USE_MATH_DEFINES")
++    set(CXX_COMPILE_FLAGS "/DOPENFHE_VERSION=\"${OPENFHE_VERSION}\" /D_USE_MATH_DEFINES")
++else()
++    set(C_COMPILE_FLAGS "-Wall -Werror -DOPENFHE_VERSION=${OPENFHE_VERSION}")
++    set(CXX_COMPILE_FLAGS "-Wall -Werror -DOPENFHE_VERSION=${OPENFHE_VERSION}")
++endif()
+ if(WITH_NATIVEOPT)
+     string(APPEND C_COMPILE_FLAGS " -march=native")
+     string(APPEND CXX_COMPILE_FLAGS " -march=native")
+@@ -183,7 +188,15 @@ if(IGNORE_WARNINGS)
+     string(APPEND CXX_COMPILE_FLAGS " ${IGNORE_WARNINGS}")
+ endif()
+ 
+-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
++if(MSVC)
++    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
++        set(CMAKE_C_FLAGS_RELEASE "/Od")
++        set(CMAKE_CXX_FLAGS_RELEASE "/Od")
++    else()
++        set(CMAKE_C_FLAGS_RELEASE "/O2 /DNDEBUG")
++        set(CMAKE_CXX_FLAGS_RELEASE "/O2 /DNDEBUG")
++    endif()
++elseif(CMAKE_BUILD_TYPE STREQUAL "Debug")
+     set(CMAKE_C_FLAGS_RELEASE "-O0 -DNDEBUG")
+     set(CMAKE_CXX_FLAGS_RELEASE "-O0 -DNDEBUG")
+ 
+@@ -500,8 +513,10 @@ else()  # WITH_OPENMP == OFF
+         find_package(Threads REQUIRED)
+     endif()
+     # Disable unknown #pragma omp warning
+-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unknown-pragmas")
+-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas")
++    if(NOT MSVC)
++        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unknown-pragmas")
++        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-pragmas")
++    endif()
+ endif()
+ 
+ #--------------------------------------------------------------------
+diff --git a/src/binfhe/lib/rgsw-acc.cpp b/src/binfhe/lib/rgsw-acc.cpp
+index 5e37255..1ff8686 100644
+--- a/src/binfhe/lib/rgsw-acc.cpp
++++ b/src/binfhe/lib/rgsw-acc.cpp
+@@ -50,6 +50,16 @@
+ #include <memory>
+ #include <vector>
+ 
++#if defined(_MSC_VER)
++#include <intrin.h>
++static inline unsigned int MsCtz(unsigned long long x) {
++    unsigned long idx{0};
++    _BitScanForward64(&idx, x);
++    return static_cast<unsigned int>(idx);
++}
++#define __builtin_ctz MsCtz
++#endif
++
+ namespace lbcrypto {
+ 
+ void RingGSWAccumulator::SignedDigitDecompose(const std::shared_ptr<RingGSWCryptoParams>& params,
+diff --git a/src/core/include/math/hal/bigintfxd/ubintfxd.h b/src/core/include/math/hal/bigintfxd/ubintfxd.h
+index d492725..3e388c0 100644
+--- a/src/core/include/math/hal/bigintfxd/ubintfxd.h
++++ b/src/core/include/math/hal/bigintfxd/ubintfxd.h
+@@ -335,7 +335,7 @@ public:
+    *
+    * @param val
+    */
+-    BigIntegerFixedT(double val) __attribute__((deprecated("Cannot construct from a double")));  // NOLINT
++    [[deprecated("Cannot construct from a double")]] BigIntegerFixedT(double val);  // NOLINT
+ 
+     ~BigIntegerFixedT() {}
+ 
+diff --git a/src/core/include/math/hal/bigintntl/ubintntl.h b/src/core/include/math/hal/bigintntl/ubintntl.h
+index e98f1e4..f5ba401 100644
+--- a/src/core/include/math/hal/bigintntl/ubintntl.h
++++ b/src/core/include/math/hal/bigintntl/ubintntl.h
+@@ -177,7 +177,7 @@ public:
+    *
+    * @param val
+    */
+-    myZZ(double val) __attribute__((deprecated("Cannot construct from a double")));  // NOLINT
++    [[deprecated("Cannot construct from a double")]] myZZ(double val);  // NOLINT
+ 
+     // ASSIGNMENT OPERATORS
+ 
+diff --git a/src/core/include/math/hal/intnat/ubintnat.h b/src/core/include/math/hal/intnat/ubintnat.h
+index 04adbb9..4909bc6 100644
+--- a/src/core/include/math/hal/intnat/ubintnat.h
++++ b/src/core/include/math/hal/intnat/ubintnat.h
+@@ -41,6 +41,10 @@
+ #include "math/hal/integer.h"
+ #include "math/nbtheory.h"
+ 
++#if defined(_MSC_VER)
++#include <intrin.h>
++#endif
++
+ #include "utils/debug.h"
+ #include "utils/exception.h"
+ #include "utils/inttypes.h"
+@@ -1914,6 +1918,9 @@ private:
+             uint128_t c{static_cast<uint128_t>(a) * b};
+             res.hi = static_cast<uint64_t>(c >> 64);
+             res.lo = static_cast<uint64_t>(c);
++#elif defined(_MSC_VER) && defined(_M_AMD64)
++            // MSVC x64 has no __int128; use the _umul128 intrinsic
++            res.lo = _umul128(a, b, &res.hi);
+ #elif defined(__EMSCRIPTEN__)  // web assembly
+             uint64_t a1 = a >> 32;
+             uint64_t a2 = (uint32_t)a;
+diff --git a/src/core/include/math/math-hal.h b/src/core/include/math/math-hal.h
+index 0a1d081..085e03f 100644
+--- a/src/core/include/math/math-hal.h
++++ b/src/core/include/math/math-hal.h
+@@ -38,7 +38,7 @@
+ 
+ // use of MS VC is not permitted because of various incompatibilities
+ #ifdef _MSC_VER
+-    #error "MSVC COMPILER IS NOT SUPPORTED"
++    // NOTE (local patch): MSVC support enabled; guards for __int128/MSVC handled in basicint.h / nbtheory.h
+ #endif
+ 
+ #include "config_core.h"
+diff --git a/src/core/lib/utils/demangle.cpp b/src/core/lib/utils/demangle.cpp
+index 013d921..af9ea3a 100644
+--- a/src/core/lib/utils/demangle.cpp
++++ b/src/core/lib/utils/demangle.cpp
+@@ -33,7 +33,7 @@
+ #include <cstdlib>
+ #include <string>
+ 
+-#if defined(__clang__) || defined(__GNUC__)
++#if defined(__GNUC__) || (defined(__clang__) && !defined(_MSC_VER))
+     #include <cxxabi.h>
+ 
+ std::string demangle(const char* const name) noexcept {
+diff --git a/src/pke/include/cryptocontext.h b/src/pke/include/cryptocontext.h
+index 28dfd64..0b6e49b 100644
+--- a/src/pke/include/cryptocontext.h
++++ b/src/pke/include/cryptocontext.h
+@@ -3054,9 +3054,8 @@ public:
+     * @return new evaluation key
+     * @attention This functionality has been completely removed from OpenFHE
+     */
+-    EvalKey<Element> ReKeyGen(const PrivateKey<Element> originalPrivateKey,
+-                              const PrivateKey<Element> newPrivateKey) const
+-        __attribute__((deprecated("functionality removed from OpenFHE")));
++    [[deprecated("functionality removed from OpenFHE")]] EvalKey<Element> ReKeyGen(
++        const PrivateKey<Element> originalPrivateKey, const PrivateKey<Element> newPrivateKey) const;
+ 
+     /**
+     * @brief Re-encrypts a ciphertext using a re-encryption key for Proxy Re-Encryption.
+diff --git a/src/pke/include/cryptocontextfactory.h b/src/pke/include/cryptocontextfactory.h
+index 11fbda6..64aa85b 100644
+--- a/src/pke/include/cryptocontextfactory.h
++++ b/src/pke/include/cryptocontextfactory.h
+@@ -87,7 +87,7 @@ public:
+ };
+ 
+ template <>
+-std::vector<CryptoContext<DCRTPoly>> CryptoContextFactory<DCRTPoly>::AllContexts;
++inline std::vector<CryptoContext<DCRTPoly>> CryptoContextFactory<DCRTPoly>::AllContexts = {};
+ 
+ }  // namespace lbcrypto
+ 
+diff --git a/src/pke/include/encoding/packedencoding.h b/src/pke/include/encoding/packedencoding.h
+index 48dcb63..af91462 100644
+--- a/src/pke/include/encoding/packedencoding.h
++++ b/src/pke/include/encoding/packedencoding.h
+@@ -149,8 +149,8 @@ public:
+    * @param m the encoding cyclotomic order.
+    * @params modulus is the plaintext modulus
+    */
+-    static void SetParams(uint32_t m, const PlaintextModulus& modulus)
+-        __attribute__((deprecated("use SetParams(uint32_t m, EncodingParams p)")));
++    [[deprecated("use SetParams(uint32_t m, EncodingParams p)")]] static void SetParams(
++        uint32_t m, const PlaintextModulus& modulus);
+ 
+     /**
+    * SetLength of the plaintext to the given size
+diff --git a/src/pke/lib/ciphertext-impl.cpp b/src/pke/lib/ciphertext-impl.cpp
+index 20e3be2..4cf3657 100644
+--- a/src/pke/lib/ciphertext-impl.cpp
++++ b/src/pke/lib/ciphertext-impl.cpp
+@@ -40,7 +40,7 @@ void CiphertextImpl<DCRTPoly>::SetLevel(size_t level) {
+     m_level = level;
+ 
+     // check if the multiplication depth value is sufficient in SetLevel() as it always gets called
+-    const auto cryptoParams = std::dynamic_pointer_cast<CryptoParametersCKKSRNS>(
++    const auto cryptoParams = std::dynamic_pointer_cast<const CryptoParametersCKKSRNS>(
+         CryptoObject<DCRTPoly>::GetCryptoContext()->GetCryptoParameters());
+     // the multDepth check applies only to CKKS, when cryptoParams is of type CryptoParametersCKKSRNS.
+     if (cryptoParams) {
+diff --git a/src/pke/lib/cryptocontextfactory.cpp b/src/pke/lib/cryptocontextfactory.cpp
+index 5e1cdb5..a1ffe1b 100644
+--- a/src/pke/lib/cryptocontextfactory.cpp
++++ b/src/pke/lib/cryptocontextfactory.cpp
+@@ -35,9 +35,6 @@
+ 
+ namespace lbcrypto {
+ 
+-template <>
+-std::vector<CryptoContext<DCRTPoly>> CryptoContextFactory<DCRTPoly>::AllContexts = {};
+-
+ template <typename Element>
+ CryptoContext<Element> CryptoContextFactory<Element>::FindContext(std::shared_ptr<CryptoParametersBase<Element>> params,
+                                                                   std::shared_ptr<SchemeBase<Element>> scheme) {
+diff --git a/src/pke/lib/scheme/ckksrns/ckksrns-parametergeneration.cpp b/src/pke/lib/scheme/ckksrns/ckksrns-parametergeneration.cpp
+index f61803f..144cc49 100644
+--- a/src/pke/lib/scheme/ckksrns/ckksrns-parametergeneration.cpp
++++ b/src/pke/lib/scheme/ckksrns/ckksrns-parametergeneration.cpp
+@@ -50,8 +50,10 @@ namespace lbcrypto {
+ constexpr size_t AUXMODSIZE = 119;
+ #elif NATIVEINT == 32
+ constexpr size_t AUXMODSIZE = 28;
+-#else
++#elif defined(HAVE_INT128)
+ constexpr size_t AUXMODSIZE = 60;
++#else
++constexpr size_t AUXMODSIZE = 57;
+ #endif
+ 
+ bool ParameterGenerationCKKSRNS::ParamsGenCKKSRNSInternal(std::shared_ptr<CryptoParametersBase<DCRTPoly>> cryptoParams,

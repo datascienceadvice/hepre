@@ -1,0 +1,13 @@
+{
+  "rustc_version": "rustc 1.97.0 (2d8144b78 2026-07-07)",
+  "arch": "x86_64",
+  "os": "windows",
+  "os_version": "windows",
+  "cpu_count": 8,
+  "openfhe_home": "D:/lair/hepre/vendor/openfhe-install",
+  "crate_version": "0.1.0",
+  "git_revision": "4659cac3e24537fb99fb3a25c4fd98df28ff4f3f",
+  "git_branch": "master",
+  "started_unix": 1791811701,
+  "started_utc": "2026-10-12T13:28:21Z"
+}

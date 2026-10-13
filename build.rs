@@ -1,15 +1,42 @@
 use std::env;
 use std::path::PathBuf;
+use std::process::Command;
 
 fn var_or(name: &str, default: &str) -> String {
     env::var(name).unwrap_or_else(|_| default.to_string())
 }
 
+/// Записывает в бинарник версию компилятора и путь к OpenFHE.
+///
+/// Нужно для отпечатка окружения (`src/env.rs`): артефакты исследования
+/// должны быть привязаны к конкретному инструментарию, а не только к
+/// ревизии кода.
+fn emit_environment_metadata(openfhe: &str) {
+    let rustc = env::var("RUSTC").unwrap_or_else(|_| "rustc".to_string());
+    let version = Command::new(&rustc)
+        .arg("-V")
+        .output()
+        .ok()
+        .filter(|out| out.status.success())
+        .map(|out| String::from_utf8_lossy(&out.stdout).trim().to_string())
+        .unwrap_or_else(|| "unknown".to_string());
+
+    println!("cargo:rustc-env=HEPRE_RUSTC_VERSION={version}");
+    println!("cargo:rustc-env=HEPRE_OPENFHE_HOME={openfhe}");
+    println!("cargo:rerun-if-env-changed=RUSTC");
+}
+
 fn main() {
-    let openfhe = var_or(
-        "OPENFHE_HOME",
-        "D:/lair/hepre/vendor/openfhe-install",
-    );
+    // Путь по умолчанию вычисляется от корня крейта, а не задаётся
+    // абсолютным: иначе репозиторий собирается только на машине автора.
+    let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR"));
+    let default_openfhe = manifest_dir
+        .join("vendor")
+        .join("openfhe-install")
+        .to_string_lossy()
+        .replace('\\', "/");
+
+    let openfhe = var_or("OPENFHE_HOME", &default_openfhe);
     let clang_cl = var_or(
         "CLANGCL",
         "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/Llvm/x64/bin/clang-cl.exe",
@@ -18,6 +45,8 @@ fn main() {
         "CLANG_RT_DIR",
         "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/Llvm/x64/lib/clang/19/lib/windows",
     );
+
+    emit_environment_metadata(&openfhe);
 
     let mut bridge = cxx_build::bridge("src/ffi.rs");
     bridge
@@ -33,7 +62,11 @@ fn main() {
         .flag("/MD")
         .flag("/std:c++17")
         .flag("/EHsc")
-        .flag("/D_USE_MATH_DEFINES");
+        .flag("/D_USE_MATH_DEFINES")
+        // Заголовки OpenFHE порождают сотни предупреждений о неиспользуемых
+        // параметрах виртуальных методов; они не относятся к нашему коду и
+        // прячут полезный сигнал в журнале сборки.
+        .flag("-Wno-unused-parameter");
     bridge.compile("hepre_openfhe");
 
     println!("cargo:rustc-link-search=native={openfhe}/lib");

@@ -46,7 +46,17 @@ fn json_patients() -> &'static str {
 
 #[test]
 fn role_utilities_end_to_end() {
-    let dir: PathBuf = std::env::temp_dir().join(format!("hepre_roles_test_{}", std::process::id()));
+    // Рабочий каталог — внутри каталога сборки, а не в системном TEMP:
+    // он гарантированно доступен на запись рядом с проектом, исключён из
+    // репозитория и вычищается `cargo clean`. Cargo задаёт
+    // CARGO_TARGET_TMPDIR именно для интеграционных тестов.
+    let base: PathBuf = match std::env::var_os("CARGO_TARGET_TMPDIR") {
+        Some(v) => PathBuf::from(v),
+        None => PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("target")
+            .join("test-tmp"),
+    };
+    let dir: PathBuf = base.join(format!("hepre_roles_test_{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
 

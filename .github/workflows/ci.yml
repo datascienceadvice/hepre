@@ -1,0 +1,160 @@
+name: CI
+
+on:
+  push:
+    # Ветка по умолчанию в этом репозитории — master; main указана на случай
+    # переименования, чтобы CI не замолчал после смены ветки по умолчанию.
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Static checks (formatting + lints).
+  #
+  # NOTE: this job is NOT expected to be required to pass on the first commit.
+  # The tree still has to be formatted: it starts green only after
+  # `cargo fmt --all` has been run once and the resulting formatting commit is
+  # pushed (the same applies to `cargo clippy` warnings). Treat a red `checks`
+  # job on the initial commits as expected work-in-progress, not as a
+  # regression introduced by the change under review.
+  # ---------------------------------------------------------------------------
+  checks:
+    name: checks (fmt + clippy)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      # `cargo fmt`/`cargo clippy` need to parse the crate; build.rs is not
+      # executed for either, so no OpenFHE prefix is required here.
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Clippy (warnings are errors)
+        run: cargo clippy --all-targets -- -D warnings
+
+      # Structural sanity check for CITATION.cff and for this workflow file.
+      # It does NOT validate against the official CFF JSON schema (that needs
+      # network access); run `cffconvert --validate` before a release.
+      - name: Validate repository metadata
+        run: python scripts/validate_metadata.py
+
+  # ---------------------------------------------------------------------------
+  # Full Windows build and test run.
+  #
+  # NOTE: the vendored OpenFHE patch set is REQUIRED. `scripts/setup-openfhe.ps1`
+  # clones the pinned OpenFHE commit into `vendor/openfhe-development` and applies
+  # `patches/openfhe-1.5.1-msvc.patch` before configuring with clang-cl; without
+  # those MSVC compatibility fixes OpenFHE does not compile with clang-cl and
+  # CKKS is corrupted at runtime. `vendor/` is git-ignored (too heavy), so CI
+  # caches `vendor/` — both the OpenFHE source tree and the built install prefix —
+  # to avoid rebuilding it from scratch on every run.
+  # ---------------------------------------------------------------------------
+  windows-build:
+    name: windows-build (clang-cl + OpenFHE + cargo test)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain (MSVC)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Install LLVM (clang-cl) and CMake
+        shell: pwsh
+        run: |
+          choco install llvm --version=19.1.5 --no-progress --yes
+          choco install cmake --install-arguments="'/quiet ADD_CMAKE_TO_PATH=System'" --no-progress --yes
+          # Publish the LLVM and CMake bin directories for the following steps.
+          Add-Content -Path $env:GITHUB_PATH -Value 'C:\Program Files\LLVM\bin'
+          Add-Content -Path $env:GITHUB_PATH -Value (Join-Path $env:ProgramFiles 'CMake\bin')
+
+      - name: Show toolchain
+        shell: pwsh
+        run: |
+          clang-cl --version
+          cmake --version
+
+      - name: Cache vendored OpenFHE (sources + install prefix)
+        uses: actions/cache@v4
+        with:
+          path: |
+            vendor/openfhe-development
+            vendor/openfhe-clang-build
+            vendor/openfhe-install
+          key: ${{ runner.os }}-openfhe-1.5.1-ed361af-${{ hashFiles('patches/*.patch', 'scripts/setup-openfhe.ps1') }}
+
+      - name: Obtain and build vendored OpenFHE
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/setup-openfhe.ps1
+
+      # build.rs по умолчанию ищет clang-cl и clang_rt в каталогах Visual
+      # Studio. На раннере clang-cl приходит из пакета Chocolatey, поэтому
+      # пути нужно передать явно через переменные окружения, иначе сборка
+      # шима не найдёт компилятор.
+      - name: Point the Rust build at clang-cl
+        shell: pwsh
+        run: |
+          $llvmRoot = 'C:\Program Files\LLVM'
+          $clangCl = Join-Path $llvmRoot 'bin\clang-cl.exe'
+          if (-not (Test-Path -LiteralPath $clangCl)) {
+            throw "clang-cl не найден: $clangCl"
+          }
+          $clangLib = Get-ChildItem -LiteralPath (Join-Path $llvmRoot 'lib\clang') -Directory |
+            Sort-Object Name -Descending | Select-Object -First 1
+          if (-not $clangLib) { throw 'Не найден каталог ресурсов clang в lib\clang' }
+          $rtDir = Join-Path $clangLib.FullName 'lib\windows'
+          if (-not (Test-Path -LiteralPath $rtDir)) {
+            throw "Не найден каталог clang_rt.builtins: $rtDir"
+          }
+          "CLANGCL=$clangCl"    | Add-Content -Path $env:GITHUB_ENV
+          "CLANG_RT_DIR=$rtDir" | Add-Content -Path $env:GITHUB_ENV
+          Write-Host "CLANGCL=$clangCl"
+          Write-Host "CLANG_RT_DIR=$rtDir"
+
+      # MSVC runtime must be on PATH when running the built test binaries,
+      # otherwise the process aborts with 0xC0000135 (MSVCP140.dll not found).
+      - name: cargo test (release)
+        shell: pwsh
+        run: |
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+          $vsRoot = & $vswhere -latest -products * -property installationPath
+          $msvcRoot = Join-Path $vsRoot 'VC\Tools\MSVC'
+          $msvcVer = Get-ChildItem $msvcRoot -Directory | Sort-Object Name -Descending | Select-Object -First 1
+          $rt = Join-Path $msvcVer.FullName 'bin\Hostx64\x64'
+          Write-Host "MSVC runtime directory: $rt"
+          $env:PATH = "$rt;$env:PATH"
+          cargo test --release
+
+      # Repro run: regenerates the study config and performs one full study run,
+      # verifying that the pipeline still produces artifacts end-to-end.
+      - name: Study run (reproducibility)
+        shell: pwsh
+        run: |
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+          $vsRoot = & $vswhere -latest -products * -property installationPath
+          $msvcRoot = Join-Path $vsRoot 'VC\Tools\MSVC'
+          $msvcVer = Get-ChildItem $msvcRoot -Directory | Sort-Object Name -Descending | Select-Object -First 1
+          $rt = Join-Path $msvcVer.FullName 'bin\Hostx64\x64'
+          $env:PATH = "$rt;$env:PATH"
+          .\target\release\study.exe --write-default-config configs\study.json
+          .\target\release\study.exe --config configs\study.json
+
+      - name: Upload study artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: study-results
+          path: results/
+          if-no-files-found: error

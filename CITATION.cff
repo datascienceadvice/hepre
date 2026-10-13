@@ -1,0 +1,47 @@
+cff-version: 1.2.0
+message: "If you use HEPRE in academic work, please cite it as below."
+title: "HEPRE: privacy-preserving clinical risk scoring under homomorphic encryption and proxy re-encryption"
+type: software
+authors:
+  - family-names: Martin
+    given-names: Alex
+    email: hepre@capsula.by
+repository-code: "https://github.com/datascienceadvice/hepre"
+url: "https://github.com/datascienceadvice/hepre"
+license: BSD-2-Clause
+version: 0.1.0
+date-released: 2026-09-07
+keywords:
+  - homomorphic encryption
+  - CKKS
+  - proxy re-encryption
+  - OpenFHE
+  - Rust
+  - clinical laboratory diagnostics
+  - risk scoring
+  - privacy-preserving machine learning
+abstract: >-
+  HEPRE is a research prototype and reproducibility package for
+  privacy-preserving type-2-diabetes risk scoring under homomorphic encryption.
+  The mathematical core is OpenFHE (CKKS for approximate real arithmetic, BFV
+  for an integer control path, and lattice-based proxy re-encryption in the
+  INDCPA-PRE mode), wrapped in Rust through a cxx bridge with a C++ FFI shim.
+  Three role CLIs — laboratory, computing server and hospital — exchange only
+  serialized ciphertexts and keys, which is how the prototype is implemented. The
+  scenario evaluated in the accompanying manuscript is bilateral: a laboratory and
+  an external assessor (e.g., an insurer), where the assessor's environment plays
+  the computing role and the laboratory performs the proxy re-encryption of the
+  result. A laboratory that owns the patient features standardizes and encrypts
+  them and issues the proxy re-encryption key. A server evaluates the full
+  logistic-regression score homomorphically -- a linear logit followed by a
+  polynomial approximation of the sigmoid -- without ever seeing the features or
+  holding any decryption key. A hospital decrypts only the transferred probability
+  and applies the clinical threshold. The repository contains the wrapper API with
+  RAII handles and persistent error handling at the FFI boundary, three role CLIs
+  with a file-based handoff, a deterministic synthetic cohort generator with a
+  documented ground-truth data-generating process, the homomorphic inference
+  circuit, an in-repository statistics module, a study runner that regenerates
+  every reported number, and an integration test suite. All results are shipped
+  as machine-readable artifacts with SHA-256 digests and an environment
+  fingerprint. It is a prototype intended for research and reproducibility only,
+  and must not be used with real patient data.
