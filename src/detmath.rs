@@ -81,9 +81,15 @@ pub fn ln(x: f64) -> f64 {
         let scaled = x * pow2i(54);
         let b = scaled.to_bits();
         let e = ((b >> 52) & 0x7ff) as i32 - 1023 - 54;
-        (f64::from_bits((b & 0x000f_ffff_ffff_ffff) | 0x3ff0_0000_0000_0000), e)
+        (
+            f64::from_bits((b & 0x000f_ffff_ffff_ffff) | 0x3ff0_0000_0000_0000),
+            e,
+        )
     } else {
-        (f64::from_bits(raw_frac | 0x3ff0_0000_0000_0000), raw_exp - 1023)
+        (
+            f64::from_bits(raw_frac | 0x3ff0_0000_0000_0000),
+            raw_exp - 1023,
+        )
     };
 
     // Приводим m к [1/√2, √2), чтобы |z| был мал.
@@ -223,7 +229,11 @@ mod tests {
         while x <= 40.0 {
             let got = exp(x);
             let want = x.exp();
-            let rel = if want == 0.0 { got.abs() } else { ((got - want) / want).abs() };
+            let rel = if want == 0.0 {
+                got.abs()
+            } else {
+                ((got - want) / want).abs()
+            };
             assert!(rel < 1e-14, "exp({x}): got {got}, want {want}, rel {rel:e}");
             x += 0.013;
         }
@@ -267,7 +277,10 @@ mod tests {
         while x <= 6.5 {
             let got = cos(x);
             let want = x.cos();
-            assert!((got - want).abs() < 1e-15, "cos({x}): got {got}, want {want}");
+            assert!(
+                (got - want).abs() < 1e-15,
+                "cos({x}): got {got}, want {want}"
+            );
             x += 0.007;
         }
         // Точки, важные для узлов Чебышёва.

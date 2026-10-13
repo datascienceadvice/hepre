@@ -6,6 +6,18 @@
 //!
 //! Все FFI-функции сами перехватывают C++-исключения: провал сообщается
 //! нулевым хэндлом / пустым контейнером, а текст ошибки читается через
+//! `error_pop()`.
+
+// Научно-воспроизводимый крейт: ряд style-линтов сознательно разрешён,
+// чтобы не переписывать числовые алгоритмы под форму clippy.
+#![allow(clippy::excessive_precision)] // литералы с точностью зафиксированы намеренно
+#![allow(clippy::needless_range_loop)] // индексы в циклах читаются как в исходном алгоритме
+#![allow(clippy::manual_range_contains)] // явные сравнения диапазонов прозрачнее
+#![allow(clippy::manual_memcpy)] // циклы копирования понятны без unsafe::copy_from_slice
+#![allow(clippy::inconsistent_digit_grouping)] // разделители цифр — по исходным данным
+#![allow(clippy::module_inception)] // соглашение имён модулей сохранено
+#![allow(clippy::too_many_arguments)] // сигнатуры числовых конвейеров объёмны сознательно
+#![allow(clippy::manual_div_ceil)] // явная формула деления с округлением документирует алгоритм
 //! `take_last_error` и возвращается как [`Error`].
 
 pub(crate) mod ffi;
@@ -84,7 +96,11 @@ pub struct CkksParams {
 
 impl Default for CkksParams {
     fn default() -> Self {
-        Self { batch_size: 8192, multiplicative_depth: 2, scaling_mod_size: 40 }
+        Self {
+            batch_size: 8192,
+            multiplicative_depth: 2,
+            scaling_mod_size: 40,
+        }
     }
 }
 
@@ -98,7 +114,11 @@ pub struct BfvParams {
 
 impl Default for BfvParams {
     fn default() -> Self {
-        Self { batch_size: 8192, multiplicative_depth: 2, plaintext_modulus: 65537 }
+        Self {
+            batch_size: 8192,
+            multiplicative_depth: 2,
+            plaintext_modulus: 65537,
+        }
     }
 }
 
@@ -140,12 +160,20 @@ handle!(Ciphertext, ct_free);
 
 impl Context {
     pub fn new_ckks(p: CkksParams) -> Result<Self> {
-        let raw = ok_handle(ffi::ffi::ctx_new_ckks(p.batch_size, p.multiplicative_depth, p.scaling_mod_size))?;
+        let raw = ok_handle(ffi::ffi::ctx_new_ckks(
+            p.batch_size,
+            p.multiplicative_depth,
+            p.scaling_mod_size,
+        ))?;
         Self::finish_creation(raw)
     }
 
     pub fn new_bfv(p: BfvParams) -> Result<Self> {
-        let raw = ok_handle(ffi::ffi::ctx_new_bfv(p.batch_size, p.multiplicative_depth, p.plaintext_modulus))?;
+        let raw = ok_handle(ffi::ffi::ctx_new_bfv(
+            p.batch_size,
+            p.multiplicative_depth,
+            p.plaintext_modulus,
+        ))?;
         Self::finish_creation(raw)
     }
 

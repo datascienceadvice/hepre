@@ -41,7 +41,10 @@ impl Rng {
         for slot in s.iter_mut() {
             *slot = splitmix64(&mut sm);
         }
-        Self { s, spare_normal: None }
+        Self {
+            s,
+            spare_normal: None,
+        }
     }
 
     /// Создаёт независимый подпоток по имени: одно и то же имя при одном и
@@ -204,7 +207,10 @@ mod tests {
         // Каждый из 10 интервалов должен получить ~n/10 значений (±5%).
         for (i, c) in buckets.iter().enumerate() {
             let expected = n as f64 / 10.0;
-            assert!((*c as f64 - expected).abs() < expected * 0.05, "интервал {i}: {c}");
+            assert!(
+                (*c as f64 - expected).abs() < expected * 0.05,
+                "интервал {i}: {c}"
+            );
         }
     }
 

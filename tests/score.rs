@@ -1,8 +1,8 @@
 //! Этап A2 — сквозной приватный скоринг: лаба → сервер → больница (PRE).
 
 use hepre::scoring::{
-    compute_score, decrypt_scores, encrypt_features, scoring_context, transfer_score, EncodedFeatures,
-    ScoringModel,
+    compute_score, decrypt_scores, encrypt_features, scoring_context, transfer_score,
+    EncodedFeatures, ScoringModel,
 };
 use hepre::{CkksParams, Context};
 
@@ -126,6 +126,9 @@ fn multiple_patients_in_one_batch() {
     let got = decrypt_scores(&cc, &keys.secret_key().unwrap(), &score, 200).unwrap();
     for (i, (g, x)) in got.iter().zip(xs.iter()).enumerate() {
         let expected = m.score_plain(x);
-        assert!((g - expected).abs() < 0.2, "row {i}: got {g}, expected {expected}");
+        assert!(
+            (g - expected).abs() < 0.2,
+            "row {i}: got {g}, expected {expected}"
+        );
     }
 }

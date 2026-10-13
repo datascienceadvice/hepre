@@ -60,8 +60,7 @@ impl LogisticModel {
     /// `η = b + Σ_j w_j · z_j`.
     pub fn eta_standardized(&self, z: &[f64]) -> f64 {
         self.intercept
-            + z
-                .iter()
+            + z.iter()
                 .zip(&self.weights)
                 .map(|(zj, wj)| wj * zj)
                 .sum::<f64>()
@@ -110,10 +109,11 @@ impl LogisticModel {
     ///
     /// Нужен, чтобы выбрать границу аппроксимации сигмоиды многочленом.
     pub fn eta_range(&self, xs: &[Vec<f64>]) -> (f64, f64) {
-        xs.iter().fold((f64::INFINITY, f64::NEG_INFINITY), |(lo, hi), x| {
-            let e = self.eta(x);
-            (lo.min(e), hi.max(e))
-        })
+        xs.iter()
+            .fold((f64::INFINITY, f64::NEG_INFINITY), |(lo, hi), x| {
+                let e = self.eta(x);
+                (lo.min(e), hi.max(e))
+            })
     }
 
     /// Предсказанные вероятности для набора.
@@ -204,7 +204,11 @@ pub fn fit(
     let n = xs.len();
     let p = xs[0].len();
     assert!(p > 0, "fit: нет признаков");
-    assert_eq!(feature_names.len(), p, "fit: число имён признаков не совпадает");
+    assert_eq!(
+        feature_names.len(),
+        p,
+        "fit: число имён признаков не совпадает"
+    );
 
     // Средние и СКО по обучающей выборке.
     let mut means = vec![0.0_f64; p];
@@ -413,7 +417,12 @@ mod tests {
     #[test]
     fn constant_feature_does_not_break_fitting() {
         // Второй столбец постоянен: sd = 0 должен подменяться на 1.
-        let xs = vec![vec![1.0, 7.0], vec![2.0, 7.0], vec![3.0, 7.0], vec![4.0, 7.0]];
+        let xs = vec![
+            vec![1.0, 7.0],
+            vec![2.0, 7.0],
+            vec![3.0, 7.0],
+            vec![4.0, 7.0],
+        ];
         let ys = vec![false, false, true, true];
         let m = fit(&names(2), &xs, &ys, 1e-3, 50, 1e-10);
         assert_eq!(m.sds[1], 1.0);

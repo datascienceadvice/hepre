@@ -10,7 +10,9 @@
 
 use std::time::Instant;
 
-use hepre::scoring::{compute_score, decrypt_scores, encrypt_features, transfer_score, ScoringModel};
+use hepre::scoring::{
+    compute_score, decrypt_scores, encrypt_features, transfer_score, ScoringModel,
+};
 use hepre::{CkksParams, Context, PublicKey, SecretKey};
 
 const BATCH: usize = 8192;
@@ -18,7 +20,11 @@ const SIZES: [usize; 4] = [10, 100, 1000, 10000];
 
 // Нормированные фичи: age, bmi, glucose, family_hist (0/1), hba1c.
 fn model() -> ScoringModel {
-    ScoringModel { weights: vec![0.03, 0.08, 0.14, 0.10, 0.22], intercept: -1.7, threshold: 0.0 }
+    ScoringModel {
+        weights: vec![0.03, 0.08, 0.14, 0.10, 0.22],
+        intercept: -1.7,
+        threshold: 0.0,
+    }
 }
 
 fn dataset(n: usize) -> Vec<Vec<f64>> {
@@ -88,15 +94,26 @@ fn run_size(
         }
     }
 
-    Timings { encrypt_ms, score_ms, pre_ms, decrypt_ms, max_abs_err, mismatches }
+    Timings {
+        encrypt_ms,
+        score_ms,
+        pre_ms,
+        decrypt_ms,
+        max_abs_err,
+        mismatches,
+    }
 }
 
 fn main() {
     println!("=== Private diabetes-risk scoring: lab -> server(FHE) -> hospital(PRE) ===");
     println!("batch (CKKS slots) = {BATCH}, features = 5, additive linear scorer.");
 
-    let cc = Context::new_ckks(CkksParams { batch_size: 8192, multiplicative_depth: 3, scaling_mod_size: 40 })
-        .expect("ctx_new_ckks");
+    let cc = Context::new_ckks(CkksParams {
+        batch_size: 8192,
+        multiplicative_depth: 3,
+        scaling_mod_size: 40,
+    })
+    .expect("ctx_new_ckks");
 
     // Лаборатория и больница — один раз. ReKeyGen (lab_sk -> hosp_pk) тоже один раз.
     let t = Instant::now();
@@ -119,7 +136,10 @@ fn main() {
     let rekey = cc.rekeygen(&lab_sk, &hosp_pk).unwrap();
     let rekeygen_ms = t.elapsed().as_secs_f64() * 1000.0;
 
-    println!("KeyGen(lab) = {:.2} ms; ReKeyGen(lab_sk -> hosp_pk) = {:.2} ms.", keygen_ms, rekeygen_ms);
+    println!(
+        "KeyGen(lab) = {:.2} ms; ReKeyGen(lab_sk -> hosp_pk) = {:.2} ms.",
+        keygen_ms, rekeygen_ms
+    );
     println!();
     println!(
         "{:<6} {:>10} {:>10} {:>10} {:>10} | {:>9} {:>7}",
@@ -144,7 +164,9 @@ fn main() {
     println!();
     println!("Notes:");
     println!("  * KeyGen/ReKeyGen measured once (not per patient); Encrypt/Score/PRE/Decrypt = full cohort wall-time.");
-    println!("  * Ciphertexts encrypted under lab pk; server computes score; PRE transfers to hospital;");
+    println!(
+        "  * Ciphertexts encrypted under lab pk; server computes score; PRE transfers to hospital;"
+    );
     println!("    hospital decrypts with its own sk and applies the threshold in the clear.");
     println!("  * Run with `--release` for realistic timings.");
 }

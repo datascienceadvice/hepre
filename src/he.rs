@@ -80,7 +80,11 @@ pub fn encrypt_standardized_features(
 ) -> Result<EncodedFeatures> {
     let n = xs.len();
     if n == 0 {
-        return Ok(EncodedFeatures { cts: Vec::new(), n: 0, intercept_pt: None });
+        return Ok(EncodedFeatures {
+            cts: Vec::new(),
+            n: 0,
+            intercept_pt: None,
+        });
     }
     let f = model.weights.len();
     let batch = (cc.ring_dimension() / 2) as usize;
@@ -124,7 +128,9 @@ pub fn compute_logit(
     model: &LogisticModel,
 ) -> Result<Ciphertext> {
     if feats.cts.is_empty() {
-        return Err(Error("compute_logit: нет зашифрованных признаков".to_string()));
+        return Err(Error(
+            "compute_logit: нет зашифрованных признаков".to_string(),
+        ));
     }
     if model.weights.len() != feats.cts.len() {
         return Err(Error(format!(
@@ -342,7 +348,11 @@ mod tests {
             60,
             1e-10,
         );
-        (model, cohort.validation_features(), cohort.validation_outcomes())
+        (
+            model,
+            cohort.validation_features(),
+            cohort.validation_outcomes(),
+        )
     }
 
     #[test]
@@ -404,7 +414,10 @@ mod tests {
         let decisions = threshold_probabilities(&probs);
 
         let expected: Vec<bool> = xs.iter().map(|x| model.predict(x)).collect();
-        assert_eq!(decisions, expected, "гомоморфные решения разошлись с эталоном");
+        assert_eq!(
+            decisions, expected,
+            "гомоморфные решения разошлись с эталоном"
+        );
     }
 
     #[test]
@@ -459,7 +472,10 @@ mod tests {
         let sh_dec = threshold_probabilities(&sh_p);
         let mismatches = mismatched_etas(&sh_dec);
 
-        assert!(!mismatches.is_empty(), "сдвиг {shift} не создал ни одного расхождения");
+        assert!(
+            !mismatches.is_empty(),
+            "сдвиг {shift} не создал ни одного расхождения"
+        );
         assert!(
             mismatches.len() > base_mm.len(),
             "сдвиг должен дать больше расхождений, чем шум ({} > {})",
@@ -470,7 +486,10 @@ mod tests {
         // Наибольшее |η| среди расхождений ограничено полосой shift/(d0/B) с запасом.
         let slope = poly.coeffs[0] / poly.bound;
         let band = shift / slope * 1.6;
-        let max_abs_eta = mismatches.iter().map(|e| e.abs()).fold(f64::NEG_INFINITY, f64::max);
+        let max_abs_eta = mismatches
+            .iter()
+            .map(|e| e.abs())
+            .fold(f64::NEG_INFINITY, f64::max);
         assert!(
             max_abs_eta < band,
             "расхождение при |η| = {max_abs_eta} вне ожидаемой полосы {band}"
@@ -478,8 +497,8 @@ mod tests {
 
         // Сдвиг с отрицательным знаком смещает в другую сторону: расхождения
         // симметрично появляются при η > 0.
-        let neg = eval_sigmoid_polynomial_shifted(&cc, &ct, &poly, etas.len(), -shift)
-            .expect("shift-");
+        let neg =
+            eval_sigmoid_polynomial_shifted(&cc, &ct, &poly, etas.len(), -shift).expect("shift-");
         let neg_p = decrypt_probabilities(&cc, &sk, &neg, etas.len()).expect("decrypt");
         let neg_dec = threshold_probabilities(&neg_p);
         let neg_mismatch_positive = etas
@@ -488,24 +507,33 @@ mod tests {
             .zip(&ref_dec)
             .filter(|((e, b), a)| **b != **a && **e > 0.0)
             .count();
-        assert!(neg_mismatch_positive > 0, "отрицательный сдвиг не сдвинул решения при η > 0");
+        assert!(
+            neg_mismatch_positive > 0,
+            "отрицательный сдвиг не сдвинул решения при η > 0"
+        );
     }
 
     #[test]
     fn logit_circuit_reproduces_plaintext_logits() {
         let (model, xs, _ys) = tiny_model();
-        let cc = context_for_polynomial(&SigmoidPolynomial::fit(8.0, 11), DEPTH_MARGIN_TEST).expect("ctx");
+        let cc = context_for_polynomial(&SigmoidPolynomial::fit(8.0, 11), DEPTH_MARGIN_TEST)
+            .expect("ctx");
         let keys = cc.keygen().expect("keygen");
         let pk = keys.public_key().expect("pk");
         let sk = keys.secret_key().expect("sk");
 
         let feats = encrypt_standardized_features(&cc, &pk, &model, &xs).expect("encrypt");
         let eta_ct = compute_logit(&cc, &feats, &model).expect("logit");
-        let got = cc.decrypt_ckks(&sk, &eta_ct, xs.len() as u32).expect("decrypt");
+        let got = cc
+            .decrypt_ckks(&sk, &eta_ct, xs.len() as u32)
+            .expect("decrypt");
         let want = model.eta_all(&xs);
 
         for (i, (g, w)) in got.iter().zip(&want).enumerate() {
-            assert!((g - w).abs() < 1e-6, "пациент {i}: HE {g} против открытого {w}");
+            assert!(
+                (g - w).abs() < 1e-6,
+                "пациент {i}: HE {g} против открытого {w}"
+            );
         }
     }
 
@@ -567,10 +595,7 @@ mod tests {
         match decrypt_probabilities(&cc, &stranger_sk, &transferred, xs.len()) {
             Err(_) => { /* fail-closed — ожидаемый исход */ }
             Ok(values) => {
-                let plausible = values
-                    .iter()
-                    .filter(|v| (0.0..=1.0).contains(*v))
-                    .count();
+                let plausible = values.iter().filter(|v| (0.0..=1.0).contains(*v)).count();
                 let expected: Vec<f64> = xs.iter().map(|x| model.predict_proba(x)).collect();
                 let close = values
                     .iter()
@@ -589,7 +614,8 @@ mod tests {
     #[test]
     fn more_patients_than_one_batch_is_rejected() {
         let (model, _xs, _ys) = tiny_model();
-        let cc = context_for_polynomial(&SigmoidPolynomial::fit(8.0, 11), DEPTH_MARGIN_TEST).expect("ctx");
+        let cc = context_for_polynomial(&SigmoidPolynomial::fit(8.0, 11), DEPTH_MARGIN_TEST)
+            .expect("ctx");
         let keys = cc.keygen().expect("keygen");
         let pk = keys.public_key().expect("pk");
 

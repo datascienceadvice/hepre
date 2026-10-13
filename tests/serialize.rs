@@ -22,7 +22,12 @@ fn ciphertext_serialization_roundtrip() {
     let ct2 = cc.deserialize_ciphertext(&bytes).unwrap();
     let got = cc.decrypt_ckks(&sk, &ct2, 4).unwrap();
     for i in 0..4 {
-        assert!((got[i] - values[i]).abs() < 1e-2, "slot {i}: got {}, expected {}", got[i], values[i]);
+        assert!(
+            (got[i] - values[i]).abs() < 1e-2,
+            "slot {i}: got {}, expected {}",
+            got[i],
+            values[i]
+        );
     }
 }
 
@@ -43,10 +48,17 @@ fn secret_key_serialization_roundtrip() {
     let sk2 = cc.deserialize_secret_key(&sk_bytes).unwrap();
 
     let values = [5.0, -2.0, 1.5, 0.0];
-    let ct = cc.encrypt(&pk, &cc.make_ckks_plaintext(&values).unwrap()).unwrap();
+    let ct = cc
+        .encrypt(&pk, &cc.make_ckks_plaintext(&values).unwrap())
+        .unwrap();
     let got = cc.decrypt_ckks(&sk2, &ct, 4).unwrap();
     for i in 0..4 {
-        assert!((got[i] - values[i]).abs() < 1e-2, "slot {i}: got {}, expected {}", got[i], values[i]);
+        assert!(
+            (got[i] - values[i]).abs() < 1e-2,
+            "slot {i}: got {}, expected {}",
+            got[i],
+            values[i]
+        );
     }
 }
 
@@ -67,7 +79,10 @@ fn wrong_key_fails_or_garbage() {
     match cc.decrypt_ckks(&k2.secret_key().unwrap(), &ct, 4) {
         Err(_) => {} // OpenFHE отвергает дешифрование (слишком высокий шум)
         Ok(got) => {
-            let mismatch = got.iter().zip([1.0f64, 2.0, 3.0, 4.0]).any(|(g, e)| (*g - e).abs() > 0.5);
+            let mismatch = got
+                .iter()
+                .zip([1.0f64, 2.0, 3.0, 4.0])
+                .any(|(g, e)| (*g - e).abs() > 0.5);
             assert!(mismatch, "wrong key unexpectedly produced the plaintext");
         }
     }

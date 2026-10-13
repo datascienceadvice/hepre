@@ -28,9 +28,15 @@ fn bfv_roundtrip_and_eval() {
     let got = cc.decrypt_bfv(&sk, &ct, 4).unwrap();
     assert_eq!(got, a, "roundtrip mismatch");
 
-    let ca = cc.encrypt(&pk, &cc.make_bfv_plaintext(&a).unwrap()).unwrap();
-    let cb = cc.encrypt(&pk, &cc.make_bfv_plaintext(&b).unwrap()).unwrap();
-    let cc_ = cc.encrypt(&pk, &cc.make_bfv_plaintext(&c).unwrap()).unwrap();
+    let ca = cc
+        .encrypt(&pk, &cc.make_bfv_plaintext(&a).unwrap())
+        .unwrap();
+    let cb = cc
+        .encrypt(&pk, &cc.make_bfv_plaintext(&b).unwrap())
+        .unwrap();
+    let cc_ = cc
+        .encrypt(&pk, &cc.make_bfv_plaintext(&c).unwrap())
+        .unwrap();
 
     let cm = cc.eval_mult(&ca, &cb).unwrap();
     let cad = cc.eval_add(&cm, &cc_).unwrap();
@@ -53,7 +59,9 @@ fn bfv_secret_key_roundtrip_serialization() {
     let sk2 = cc.deserialize_secret_key(&sk_bytes).unwrap();
 
     let a: Vec<i64> = (10..=13).collect();
-    let ct = cc.encrypt(&pk, &cc.make_bfv_plaintext(&a).unwrap()).unwrap();
+    let ct = cc
+        .encrypt(&pk, &cc.make_bfv_plaintext(&a).unwrap())
+        .unwrap();
     let got = cc.decrypt_bfv(&sk2, &ct, 4).unwrap();
     assert_eq!(got, a);
 }

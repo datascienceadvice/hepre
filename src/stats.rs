@@ -73,7 +73,10 @@ pub fn sorted(xs: &[f64]) -> Vec<f64> {
 /// Максимальное абсолютное отклонение поэлементной разности.
 pub fn max_abs_diff(a: &[f64], b: &[f64]) -> f64 {
     assert_eq!(a.len(), b.len(), "max_abs_diff: длины не совпадают");
-    a.iter().zip(b).map(|(x, y)| (x - y).abs()).fold(0.0, f64::max)
+    a.iter()
+        .zip(b)
+        .map(|(x, y)| (x - y).abs())
+        .fold(0.0, f64::max)
 }
 
 /// Корень из среднего квадрата разности (RMSE) двух рядов.
@@ -341,7 +344,11 @@ pub struct AucEstimate {
 /// `V10` (для положительных наблюдений) и `V01` (для отрицательных):
 /// `Var = S10/n1 + S01/n0`.
 pub fn roc_auc_delong(labels: &[bool], scores: &[f64], alpha: f64) -> AucEstimate {
-    assert_eq!(labels.len(), scores.len(), "roc_auc_delong: длины не совпадают");
+    assert_eq!(
+        labels.len(),
+        scores.len(),
+        "roc_auc_delong: длины не совпадают"
+    );
     let pos: Vec<f64> = labels
         .iter()
         .zip(scores)
@@ -606,19 +613,31 @@ pub fn binary_metrics(truth: &[bool], pred: &[bool], alpha: f64) -> BinaryMetric
     BinaryMetrics {
         confusion: cm,
         sensitivity: cm.sensitivity(),
-        sensitivity_ci: wilson_ci(cm.true_positive, cm.true_positive + cm.false_negative, alpha),
-        specificity: cm.specificity(),
-        specificity_ci: wilson_ci(cm.true_negative, cm.true_negative + cm.false_positive, alpha),
-        ppv: cm.ppv(),
-        ppv_ci: wilson_ci(cm.true_positive, cm.true_positive + cm.false_positive, alpha),
-        npv: cm.npv(),
-        npv_ci: wilson_ci(cm.true_negative, cm.true_negative + cm.false_negative, alpha),
-        accuracy: cm.accuracy(),
-        accuracy_ci: wilson_ci(
-            cm.true_positive + cm.true_negative,
-            cm.total(),
+        sensitivity_ci: wilson_ci(
+            cm.true_positive,
+            cm.true_positive + cm.false_negative,
             alpha,
         ),
+        specificity: cm.specificity(),
+        specificity_ci: wilson_ci(
+            cm.true_negative,
+            cm.true_negative + cm.false_positive,
+            alpha,
+        ),
+        ppv: cm.ppv(),
+        ppv_ci: wilson_ci(
+            cm.true_positive,
+            cm.true_positive + cm.false_positive,
+            alpha,
+        ),
+        npv: cm.npv(),
+        npv_ci: wilson_ci(
+            cm.true_negative,
+            cm.true_negative + cm.false_negative,
+            alpha,
+        ),
+        accuracy: cm.accuracy(),
+        accuracy_ci: wilson_ci(cm.true_positive + cm.true_negative, cm.total(), alpha),
         f1: cm.f1(),
         mcc: cm.mcc(),
     }
@@ -694,21 +713,17 @@ pub fn agreement(a: &[bool], b: &[bool], alpha: f64, seed: u64, bootstrap: usize
     assert_eq!(a.len(), b.len(), "agreement: длины не совпадают");
     let n = a.len();
     let discordant = a.iter().zip(b).filter(|(x, y)| x != y).count();
-    let a_true_b_false = a
-        .iter()
-        .zip(b)
-        .filter(|(x, y)| **x && !**y)
-        .count();
-    let a_false_b_true = a
-        .iter()
-        .zip(b)
-        .filter(|(x, y)| !**x && **y)
-        .count();
+    let a_true_b_false = a.iter().zip(b).filter(|(x, y)| **x && !**y).count();
+    let a_false_b_true = a.iter().zip(b).filter(|(x, y)| !**x && **y).count();
 
     Agreement {
         discordant,
         total: n,
-        discordance_rate: if n == 0 { f64::NAN } else { discordant as f64 / n as f64 },
+        discordance_rate: if n == 0 {
+            f64::NAN
+        } else {
+            discordant as f64 / n as f64
+        },
         discordance_ci: clopper_pearson_ci(discordant, n, alpha),
         concordance_rate: if n == 0 {
             f64::NAN
@@ -1009,7 +1024,9 @@ mod tests {
 
     #[test]
     fn delong_is_symmetric_under_reversal() {
-        let labels = [true, true, false, true, false, false, true, false, true, false];
+        let labels = [
+            true, true, false, true, false, false, true, false, true, false,
+        ];
         let scores = [0.9, 0.4, 0.35, 0.8, 0.2, 0.6, 0.55, 0.1, 0.7, 0.45];
         let a = roc_auc_delong(&labels, &scores, 0.05);
         let flipped: Vec<f64> = scores.iter().map(|s| -s).collect();
@@ -1042,7 +1059,10 @@ mod tests {
         let (lo, hi) = clopper_pearson_ci(0, n, alpha);
         assert_eq!(lo, 0.0);
         let expected = 1.0 - (alpha / 2.0_f64).powf(1.0 / n as f64);
-        assert!((hi - expected).abs() < 1e-9, "hi = {hi}, expected = {expected}");
+        assert!(
+            (hi - expected).abs() < 1e-9,
+            "hi = {hi}, expected = {expected}"
+        );
         // «Правило трёх»: ≈ 3/n.
         assert!((hi - 3.0 / n as f64).abs() < 0.0002, "hi = {hi}");
 

@@ -8,9 +8,13 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use hepre::{Ciphertext, Context, CkksParams};
+use hepre::{Ciphertext, CkksParams, Context};
 
-pub const CKKS_PARAMS: CkksParams = CkksParams { batch_size: 8192, multiplicative_depth: 3, scaling_mod_size: 40 };
+pub const CKKS_PARAMS: CkksParams = CkksParams {
+    batch_size: 8192,
+    multiplicative_depth: 3,
+    scaling_mod_size: 40,
+};
 pub const BATCH: usize = 8192;
 
 const MAGIC: u32 = 0x4850_4550; // "EHPE"
@@ -35,7 +39,12 @@ pub struct Model {
 
 impl Model {
     pub fn score_plain(&self, x: &[f64]) -> f64 {
-        self.weights.iter().zip(x.iter()).map(|(w, v)| w * v).sum::<f64>() + self.intercept
+        self.weights
+            .iter()
+            .zip(x.iter())
+            .map(|(w, v)| w * v)
+            .sum::<f64>()
+            + self.intercept
     }
 }
 
@@ -92,8 +101,12 @@ pub struct Patient {
 
 pub fn parse_patients(s: &str) -> Result<Vec<Patient>, String> {
     let s = s.trim_start_matches('\u{feff}');
-    let mut v: Vec<Patient> = serde_json::from_str(s)
-        .map_err(|e| format!("не удалось разобрать --patients JSON ({}...): {e}", s.chars().take(80).collect::<String>()))?;
+    let mut v: Vec<Patient> = serde_json::from_str(s).map_err(|e| {
+        format!(
+            "не удалось разобрать --patients JSON ({}...): {e}",
+            s.chars().take(80).collect::<String>()
+        )
+    })?;
     for (i, p) in v.iter_mut().enumerate() {
         if p.name.is_empty() {
             p.name = format!("P{}", i + 1);
@@ -128,10 +141,17 @@ pub struct Handoff {
     pub blobs: Vec<Vec<u8>>,
 }
 
-pub fn write_handoff(path: &Path, kind: u16, n: usize, f: usize, blobs: &[Vec<u8>]) -> Result<(), String> {
+pub fn write_handoff(
+    path: &Path,
+    kind: u16,
+    n: usize,
+    f: usize,
+    blobs: &[Vec<u8>],
+) -> Result<(), String> {
     if let Some(dir) = path.parent() {
         if !dir.as_os_str().is_empty() {
-            fs::create_dir_all(dir).map_err(|e| format!("create_dir_all {}: {e}", dir.display()))?;
+            fs::create_dir_all(dir)
+                .map_err(|e| format!("create_dir_all {}: {e}", dir.display()))?;
         }
     }
     let mut out = Vec::new();
@@ -154,7 +174,10 @@ pub fn read_handoff(path: &Path) -> Result<(u16, u32, u32, Vec<Vec<u8>>), String
     let mut p = 0usize;
     let read_u32 = |p: &mut usize| -> Result<u32, String> {
         if *p + 4 > bytes.len() {
-            return Err(format!("{}: контейнер повреждён (ожидан u32)", path.display()));
+            return Err(format!(
+                "{}: контейнер повреждён (ожидан u32)",
+                path.display()
+            ));
         }
         let v = u32::from_le_bytes(bytes[*p..*p + 4].try_into().unwrap());
         *p += 4;
@@ -162,7 +185,10 @@ pub fn read_handoff(path: &Path) -> Result<(u16, u32, u32, Vec<Vec<u8>>), String
     };
     let read_u16 = |p: &mut usize| -> Result<u16, String> {
         if *p + 2 > bytes.len() {
-            return Err(format!("{}: контейнер повреждён (ожидан u16)", path.display()));
+            return Err(format!(
+                "{}: контейнер повреждён (ожидан u16)",
+                path.display()
+            ));
         }
         let v = u16::from_le_bytes(bytes[*p..*p + 2].try_into().unwrap());
         *p += 2;
@@ -170,7 +196,10 @@ pub fn read_handoff(path: &Path) -> Result<(u16, u32, u32, Vec<Vec<u8>>), String
     };
     let read_u64 = |p: &mut usize| -> Result<u64, String> {
         if *p + 8 > bytes.len() {
-            return Err(format!("{}: контейнер повреждён (ожидан u64)", path.display()));
+            return Err(format!(
+                "{}: контейнер повреждён (ожидан u64)",
+                path.display()
+            ));
         }
         let v = u64::from_le_bytes(bytes[*p..*p + 8].try_into().unwrap());
         *p += 8;
@@ -178,10 +207,16 @@ pub fn read_handoff(path: &Path) -> Result<(u16, u32, u32, Vec<Vec<u8>>), String
     };
 
     if read_u32(&mut p)? != MAGIC {
-        return Err(format!("{}: не handoff-файл hepre (нет MAGIC)", path.display()));
+        return Err(format!(
+            "{}: не handoff-файл hepre (нет MAGIC)",
+            path.display()
+        ));
     }
     if read_u16(&mut p)? != VERSION {
-        return Err(format!("{}: не поддерживаемая версия контейнера", path.display()));
+        return Err(format!(
+            "{}: не поддерживаемая версия контейнера",
+            path.display()
+        ));
     }
     let kind = read_u16(&mut p)?;
     let n = read_u32(&mut p)?;
@@ -191,7 +226,10 @@ pub fn read_handoff(path: &Path) -> Result<(u16, u32, u32, Vec<Vec<u8>>), String
     for i in 0..n_blobs {
         let len = read_u64(&mut p)? as usize;
         if p + len > bytes.len() {
-            return Err(format!("{}: контейнер повреждён (blob {i} выходит за границы)", path.display()));
+            return Err(format!(
+                "{}: контейнер повреждён (blob {i} выходит за границы)",
+                path.display()
+            ));
         }
         blobs.push(bytes[p..p + len].to_vec());
         p += len;
@@ -202,12 +240,17 @@ pub fn read_handoff(path: &Path) -> Result<(u16, u32, u32, Vec<Vec<u8>>), String
 pub fn blobs_to_ciphertexts(cc: &Context, blobs: &[Vec<u8>]) -> Result<Vec<Ciphertext>, String> {
     blobs
         .iter()
-        .map(|b| cc.deserialize_ciphertext(b).map_err(|e| format!("deserialize_ciphertext: {e}")))
+        .map(|b| {
+            cc.deserialize_ciphertext(b)
+                .map_err(|e| format!("deserialize_ciphertext: {e}"))
+        })
         .collect()
 }
 
 pub fn ciphertexts_to_blobs(cts: &[&Ciphertext]) -> Result<Vec<Vec<u8>>, String> {
-    cts.iter().map(|ct| ct.serialize().map_err(|e| format!("serialize: {e}"))).collect()
+    cts.iter()
+        .map(|ct| ct.serialize().map_err(|e| format!("serialize: {e}")))
+        .collect()
 }
 
 // ---------------------------------------------------------------------------

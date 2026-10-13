@@ -214,6 +214,8 @@ mod tests {
         };
         let id = run_id(&env);
         assert_eq!(id, "20260806-070640_01234567");
-        assert!(id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_'));
+        assert!(id
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_'));
     }
 }

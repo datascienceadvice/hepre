@@ -23,7 +23,11 @@ pub struct ScoringModel {
 impl ScoringModel {
     /// Непрерывный скор в открытом виде (для проверки точности бенчмарков).
     pub fn score_plain(&self, x: &[f64]) -> f64 {
-        self.intercept + x.iter().zip(&self.weights).map(|(xi, w)| w * xi).sum::<f64>()
+        self.intercept
+            + x.iter()
+                .zip(&self.weights)
+                .map(|(xi, w)| w * xi)
+                .sum::<f64>()
     }
 
     /// Бинарный риск в открытом виде.
@@ -58,7 +62,11 @@ pub fn encrypt_features(
     let n = features.len();
     let f = features.first().map_or(0, Vec::len);
     if n == 0 {
-        return Ok(EncodedFeatures { cts: Vec::new(), n: 0, intercept_pt: None });
+        return Ok(EncodedFeatures {
+            cts: Vec::new(),
+            n: 0,
+            intercept_pt: None,
+        });
     }
 
     // Колонка j → слот j. Упаковываем наоборот: строим по столбцам.
@@ -90,7 +98,11 @@ pub fn encrypt_features(
 
 /// Гомоморфный скор на сервере: `result_i = Σ_j w_j·ct_j[i] + b`.
 /// Возвращает один шифротекст (скор по всем пациентам в слотах).
-pub fn compute_score(cc: &Context, feats: &EncodedFeatures, model: &ScoringModel) -> Result<Ciphertext> {
+pub fn compute_score(
+    cc: &Context,
+    feats: &EncodedFeatures,
+    model: &ScoringModel,
+) -> Result<Ciphertext> {
     if feats.cts.is_empty() {
         return Err(crate::Error("no features encoded".to_string()));
     }
@@ -122,11 +134,20 @@ pub fn transfer_score(cc: &Context, ek: &crate::EvalKey, score: &Ciphertext) -> 
 }
 
 /// Больница: расшифровывает скоры (первые `k` слота) своим секретным ключом.
-pub fn decrypt_scores(cc: &Context, sk: &SecretKey, score: &Ciphertext, k: usize) -> Result<Vec<f64>> {
+pub fn decrypt_scores(
+    cc: &Context,
+    sk: &SecretKey,
+    score: &Ciphertext,
+    k: usize,
+) -> Result<Vec<f64>> {
     cc.decrypt_ckks(sk, score, k as u32)
 }
 
 /// Параметры контекста по умолчанию для скоринга.
 pub fn scoring_context() -> Result<Context> {
-    Context::new_ckks(CkksParams { batch_size: 8192, multiplicative_depth: 3, scaling_mod_size: 40 })
+    Context::new_ckks(CkksParams {
+        batch_size: 8192,
+        multiplicative_depth: 3,
+        scaling_mod_size: 40,
+    })
 }

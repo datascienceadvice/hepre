@@ -320,8 +320,14 @@ impl Cohort {
     /// Генерирует когорту по конфигурации.
     pub fn generate(config: &CohortConfig) -> Cohort {
         assert!(config.n_derivation > 0, "нужна непустая обучающая выборка");
-        assert!(config.n_validation > 0, "нужна непустая валидационная выборка");
-        assert!(!config.predictors.is_empty(), "нужен хотя бы один предиктор");
+        assert!(
+            config.n_validation > 0,
+            "нужна непустая валидационная выборка"
+        );
+        assert!(
+            !config.predictors.is_empty(),
+            "нужен хотя бы один предиктор"
+        );
 
         let (intercept_true, calibration_iterations) = calibrate_intercept(
             config.seed,
@@ -377,9 +383,20 @@ impl Cohort {
         // Освобождаем исходный пул явно, чтобы не держать дубликаты.
         patients.clear();
 
-        let diagnostics = summarize(config, &derivation, &validation, intercept_true, calibration_iterations);
+        let diagnostics = summarize(
+            config,
+            &derivation,
+            &validation,
+            intercept_true,
+            calibration_iterations,
+        );
 
-        Cohort { config: config.clone(), derivation, validation, diagnostics }
+        Cohort {
+            config: config.clone(),
+            derivation,
+            validation,
+            diagnostics,
+        }
     }
 }
 
@@ -437,7 +454,11 @@ fn summarize(
         realized_prevalence_derivation: prev(derivation),
         realized_prevalence_validation: prev(validation),
         realized_prevalence_all: prev(
-            &derivation.iter().chain(validation).cloned().collect::<Vec<Patient>>(),
+            &derivation
+                .iter()
+                .chain(validation)
+                .cloned()
+                .collect::<Vec<Patient>>(),
         ),
         eta_mean_all: stats::mean(&all_etas),
         eta_sd_all: stats::sd(&all_etas),
@@ -456,7 +477,13 @@ fn summarize(
 /// исследование или популяцию. Истинные коэффициенты заданы как
 /// лог-отношения шансов на нативную единицу признака.
 pub fn default_t2dm_config() -> CohortConfig {
-    let p = |name: &str, units: &str, description: &str, distribution: Distribution, min: f64, max: f64, beta_true: f64| PredictorSpec {
+    let p = |name: &str,
+             units: &str,
+             description: &str,
+             distribution: Distribution,
+             min: f64,
+             max: f64,
+             beta_true: f64| PredictorSpec {
         name: name.to_string(),
         units: units.to_string(),
         description: description.to_string(),
@@ -477,7 +504,10 @@ pub fn default_t2dm_config() -> CohortConfig {
                 "hba1c_pct",
                 "%",
                 "Гликированный гемоглобин HbA1c",
-                Distribution::Normal { mean: 5.6, sd: 0.85 },
+                Distribution::Normal {
+                    mean: 5.6,
+                    sd: 0.85,
+                },
                 4.0,
                 14.0,
                 1.10,
@@ -486,7 +516,10 @@ pub fn default_t2dm_config() -> CohortConfig {
                 "fasting_glucose_mmol",
                 "ммоль/л",
                 "Глюкоза плазмы натощак",
-                Distribution::Normal { mean: 5.4, sd: 1.10 },
+                Distribution::Normal {
+                    mean: 5.4,
+                    sd: 1.10,
+                },
                 3.0,
                 20.0,
                 0.45,
@@ -495,7 +528,10 @@ pub fn default_t2dm_config() -> CohortConfig {
                 "triglycerides_mmol",
                 "ммоль/л",
                 "Триглицериды",
-                Distribution::Normal { mean: 1.7, sd: 0.85 },
+                Distribution::Normal {
+                    mean: 1.7,
+                    sd: 0.85,
+                },
                 0.3,
                 12.0,
                 0.30,
@@ -504,7 +540,10 @@ pub fn default_t2dm_config() -> CohortConfig {
                 "hdl_mmol",
                 "ммоль/л",
                 "Холестерин липопротеинов высокой плотности",
-                Distribution::Normal { mean: 1.40, sd: 0.35 },
+                Distribution::Normal {
+                    mean: 1.40,
+                    sd: 0.35,
+                },
                 0.4,
                 3.2,
                 -0.60,
@@ -513,7 +552,10 @@ pub fn default_t2dm_config() -> CohortConfig {
                 "bmi",
                 "кг/м²",
                 "Индекс массы тела",
-                Distribution::Normal { mean: 27.5, sd: 5.0 },
+                Distribution::Normal {
+                    mean: 27.5,
+                    sd: 5.0,
+                },
                 15.0,
                 55.0,
                 0.07,
@@ -522,7 +564,10 @@ pub fn default_t2dm_config() -> CohortConfig {
                 "age_years",
                 "годы",
                 "Возраст",
-                Distribution::Normal { mean: 52.0, sd: 13.0 },
+                Distribution::Normal {
+                    mean: 52.0,
+                    sd: 13.0,
+                },
                 18.0,
                 90.0,
                 0.035,
@@ -595,7 +640,10 @@ mod tests {
         let cohort = Cohort::generate(&c);
         assert_eq!(cohort.derivation.len(), c.n_derivation);
         assert_eq!(cohort.validation.len(), c.n_validation);
-        assert_eq!(cohort.derivation.len() + cohort.validation.len(), c.n_total());
+        assert_eq!(
+            cohort.derivation.len() + cohort.validation.len(),
+            c.n_total()
+        );
 
         let mut ids: Vec<String> = cohort
             .derivation
@@ -658,7 +706,11 @@ mod tests {
         assert!(lines[0].ends_with("eta_true,p_true,outcome"));
         for (i, line) in lines[1..].iter().enumerate() {
             // 2 служебных столбца + признаки + eta + p + исход
-            assert_eq!(line.split(',').count(), 2 + c.n_features() + 3, "строка {i}");
+            assert_eq!(
+                line.split(',').count(),
+                2 + c.n_features() + 3,
+                "строка {i}"
+            );
         }
     }
 

@@ -44,7 +44,12 @@ fn pre_reencrypt_recipient_can_decrypt() {
     let ct2 = cc.reencrypt(&ek, &ct).unwrap();
     let got = decrypt(&cc, &bob_sk, &ct2);
     for i in 0..4 {
-        assert!(close(got[i], values[i]), "slot {i}: got {}, expected {}", got[i], values[i]);
+        assert!(
+            close(got[i], values[i]),
+            "slot {i}: got {}, expected {}",
+            got[i],
+            values[i]
+        );
     }
 }
 
@@ -64,13 +69,20 @@ fn pre_evalkey_serialization_roundtrip() {
     let ek2: EvalKey = cc.deserialize_eval_key(&ek_bytes).unwrap();
 
     let values = [7.0, -1.0, 0.5, 4.0];
-    let ct = cc.encrypt(&alice_pk, &cc.make_ckks_plaintext(&values).unwrap()).unwrap();
+    let ct = cc
+        .encrypt(&alice_pk, &cc.make_ckks_plaintext(&values).unwrap())
+        .unwrap();
     let ct_bytes = ct.serialize().unwrap();
     let ct2 = cc.deserialize_ciphertext(&ct_bytes).unwrap();
 
     let ct3 = cc.reencrypt(&ek2, &ct2).unwrap();
     let got = decrypt(&cc, &bob_sk, &ct3);
     for i in 0..4 {
-        assert!(close(got[i], values[i]), "slot {i}: got {}, expected {}", got[i], values[i]);
+        assert!(
+            close(got[i], values[i]),
+            "slot {i}: got {}, expected {}",
+            got[i],
+            values[i]
+        );
     }
 }

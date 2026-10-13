@@ -162,7 +162,10 @@ impl SigmoidPolynomial {
     /// шифротекстах.
     pub fn fit(bound: f64, power: usize) -> Self {
         assert!(bound > 0.0, "fit: граница должна быть положительной");
-        assert!(power >= 3 && power % 2 == 1, "fit: степень должна быть нечётной и ≥ 3");
+        assert!(
+            power >= 3 && power % 2 == 1,
+            "fit: степень должна быть нечётной и ≥ 3"
+        );
 
         let k_max = (power - 1) / 2;
         let n_nodes = (8 * (k_max + 1)).max(64);
@@ -340,7 +343,10 @@ impl SigmoidPolynomial {
 /// Строит набор аппроксимаций разной степени — для таблицы компромисса
 /// «точность / мультипликативная глубина».
 pub fn sweep(bound: f64, powers: &[usize]) -> Vec<SigmoidPolynomial> {
-    powers.iter().map(|p| SigmoidPolynomial::fit(bound, *p)).collect()
+    powers
+        .iter()
+        .map(|p| SigmoidPolynomial::fit(bound, *p))
+        .collect()
 }
 
 #[cfg(test)]
@@ -352,11 +358,18 @@ mod tests {
         for power in [3usize, 5, 7, 9, 11, 13] {
             let p = SigmoidPolynomial::fit(8.0, power);
             // Нечётность гарантирует ровно 0.5 в нуле и антисимметрию.
-            assert!(p.delta(0.0).abs() < 1e-15, "power {power}: delta(0) = {}", p.delta(0.0));
+            assert!(
+                p.delta(0.0).abs() < 1e-15,
+                "power {power}: delta(0) = {}",
+                p.delta(0.0)
+            );
             assert!((p.eval(0.0) - 0.5).abs() < 1e-15);
             for eta in [0.5_f64, 1.0, 2.0, 5.0] {
                 let sum = p.delta(eta) + p.delta(-eta);
-                assert!(sum.abs() < 1e-12, "power {power}, η = {eta}: нечётность нарушена ({sum})");
+                assert!(
+                    sum.abs() < 1e-12,
+                    "power {power}, η = {eta}: нечётность нарушена ({sum})"
+                );
             }
         }
     }
@@ -369,15 +382,16 @@ mod tests {
         for bound in [3.0_f64, 5.0, 7.0, 9.0] {
             for power in [5usize, 7, 9, 11, 13, 15] {
                 let p = SigmoidPolynomial::fit(bound, power);
-                let grid: Vec<f64> = (-4000..=4000)
-                    .map(|i| i as f64 * bound / 4000.0)
-                    .collect();
+                let grid: Vec<f64> = (-4000..=4000).map(|i| i as f64 * bound / 4000.0).collect();
                 assert_eq!(
                     p.decision_mismatches(&grid),
                     0,
                     "B = {bound}, degree {power}: решение разошлось с η ≥ 0"
                 );
-                assert!(p.decision(0.0), "при η = 0 решение обязано совпасть с эталоном");
+                assert!(
+                    p.decision(0.0),
+                    "при η = 0 решение обязано совпасть с эталоном"
+                );
             }
         }
     }
@@ -434,8 +448,14 @@ mod tests {
                     p.all_coefficients_nonnegative, expected,
                     "B = {bound}, degree {power}: отчёт о знаках не совпал с коэффициентами"
                 );
-                assert!(p.sign_preserving, "B = {bound}, degree {power}: знак не сохранён");
-                assert!(p.coeffs[0] > 0.0, "линейный коэффициент должен быть положителен");
+                assert!(
+                    p.sign_preserving,
+                    "B = {bound}, degree {power}: знак не сохранён"
+                );
+                assert!(
+                    p.coeffs[0] > 0.0,
+                    "линейный коэффициент должен быть положителен"
+                );
             }
         }
     }
@@ -445,10 +465,18 @@ mod tests {
         // Узкий интервал при высокой степени аппроксимируется хорошо;
         // широкий — хуже, потому что сигмоида там почти ступенчата.
         let p = SigmoidPolynomial::fit(4.0, 11);
-        assert!(p.max_abs_error < 1e-4, "B = 4, degree 11: ошибка {}", p.max_abs_error);
+        assert!(
+            p.max_abs_error < 1e-4,
+            "B = 4, degree 11: ошибка {}",
+            p.max_abs_error
+        );
 
         let p = SigmoidPolynomial::fit(6.0, 13);
-        assert!(p.max_abs_error < 1e-2, "B = 6, degree 13: ошибка {}", p.max_abs_error);
+        assert!(
+            p.max_abs_error < 1e-2,
+            "B = 6, degree 13: ошибка {}",
+            p.max_abs_error
+        );
     }
 
     #[test]

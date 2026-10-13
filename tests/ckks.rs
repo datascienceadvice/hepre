@@ -49,9 +49,15 @@ fn eval_mult_rescale_add() {
     let b = [5.0, 6.0, 7.0, 8.0];
     let c = [0.5, 1.5, 2.5, 3.5];
 
-    let ca = cc.encrypt(&pk, &cc.make_ckks_plaintext(&a).unwrap()).unwrap();
-    let cb = cc.encrypt(&pk, &cc.make_ckks_plaintext(&b).unwrap()).unwrap();
-    let cc_ = cc.encrypt(&pk, &cc.make_ckks_plaintext(&c).unwrap()).unwrap();
+    let ca = cc
+        .encrypt(&pk, &cc.make_ckks_plaintext(&a).unwrap())
+        .unwrap();
+    let cb = cc
+        .encrypt(&pk, &cc.make_ckks_plaintext(&b).unwrap())
+        .unwrap();
+    let cc_ = cc
+        .encrypt(&pk, &cc.make_ckks_plaintext(&c).unwrap())
+        .unwrap();
 
     let cm = cc.eval_mult(&ca, &cb).unwrap();
     let cr = cc.rescale(&cm).unwrap();
@@ -60,7 +66,11 @@ fn eval_mult_rescale_add() {
     let got = ctx_decrypt(&cc, &sk, &cad);
     for i in 0..4 {
         let exp = a[i] * b[i] + c[i];
-        assert!(close(got[i], exp), "slot {i}: got {}, expected {exp}", got[i]);
+        assert!(
+            close(got[i], exp),
+            "slot {i}: got {}, expected {exp}",
+            got[i]
+        );
     }
 }
 
@@ -86,7 +96,12 @@ fn public_key_usable_after_serialize() {
     let ct = cc.encrypt(&pk2, &pt).unwrap();
     let got = ctx_decrypt(&cc, &sk, &ct);
     for i in 0..4 {
-        assert!(close(got[i], values[i]), "slot {i}: got {}, expected {}", got[i], values[i]);
+        assert!(
+            close(got[i], values[i]),
+            "slot {i}: got {}, expected {}",
+            got[i],
+            values[i]
+        );
     }
     assert!(PublicKey::serialize(&pk2).is_ok());
 }

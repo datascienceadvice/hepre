@@ -8,7 +8,6 @@ repository = "https://github.com/datascienceadvice/hepre"
 readme = "README.md"
 keywords = ["homomorphic-encryption", "ckks", "proxy-re-encryption", "openfhe", "privacy"]
 categories = ["cryptography", "science"]
-rust-version = "1.70"
 exclude = ["paper/"]
 
 [lib]
@@ -23,3 +22,19 @@ serde_json = "1.0"
 [build-dependencies]
 cxx-build = "1.0"
 cc = "1.0"
+
+# Разрешения style-линтов на уровне пакета (действуют на все targets).
+# Научно-воспроизводимый крейт: числовые алгоритмы сознательно сохраняют
+# «буквальную» форму (прямые индексы, явные диапазоны, литералы с полной
+# точностью) — см. также комментарий в `src/lib.rs`.
+[lints.clippy]
+excessive_precision = "allow"
+needless_range_loop = "allow"
+manual_range_contains = "allow"
+manual_memcpy = "allow"
+inconsistent_digit_grouping = "allow"
+module_inception = "allow"
+too_many_arguments = "allow"
+manual_div_ceil = "allow"
+type_complexity = "allow"
+manual_is_multiple_of = "allow"

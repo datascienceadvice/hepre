@@ -32,7 +32,7 @@ use crate::he;
 use crate::logistic::{self, LogisticModel};
 use crate::poly::SigmoidPolynomial;
 use crate::stats::{self, AucEstimate, BinaryMetrics, EquivalenceResult};
-use crate::{CkksParams, Context, EvalKey, Error, PublicKey, Result, SecretKey};
+use crate::{CkksParams, Context, Error, EvalKey, PublicKey, Result, SecretKey};
 
 // ---------------------------------------------------------------------------
 // Конфигурация
@@ -156,7 +156,11 @@ pub fn default_study_config() -> StudyConfig {
                  открытым эталоном; отрицательный контроль проверяет чувствительность метрики."
             .to_string(),
         cohort: crate::cohort::default_t2dm_config(),
-        model: ModelFitConfig { lambda: 1e-3, max_iter: 100, tol: 1e-12 },
+        model: ModelFitConfig {
+            lambda: 1e-3,
+            max_iter: 100,
+            tol: 1e-12,
+        },
         polynomial: PolynomialConfig {
             sweep_powers: vec![3, 5, 7, 9, 11, 13, 15],
             selected_power: 11,
@@ -170,7 +174,11 @@ pub fn default_study_config() -> StudyConfig {
             bootstrap_replicates: 2000,
             bootstrap_seed: 20_260_907,
         },
-        he: HeConfig { batch_size: 8192, scaling_mod_size: 40, depth_margin: 3 },
+        he: HeConfig {
+            batch_size: 8192,
+            scaling_mod_size: 40,
+            depth_margin: 3,
+        },
         scalability: ScalabilityConfig {
             sizes: vec![1_000, 5_000, 10_000, 20_000, 40_000],
             repeats: 3,
@@ -745,7 +753,8 @@ pub fn run(config: &StudyConfig, out_root: &Path) -> Result<StudyReport> {
         .chain(model.eta_all(&val_x))
         .collect();
     let max_abs_eta_observed = max_abs(&all_etas);
-    let bound = (max_abs_eta_observed * config.polynomial.bound_margin).max(config.polynomial.min_bound);
+    let bound =
+        (max_abs_eta_observed * config.polynomial.bound_margin).max(config.polynomial.min_bound);
 
     let sweep: Vec<SigmoidPolynomial> = config
         .polynomial
@@ -820,7 +829,10 @@ pub fn run(config: &StudyConfig, out_root: &Path) -> Result<StudyReport> {
     let (mut selected, selection_rule) = match chosen {
         Some((candidate, rule)) => (candidate, rule),
         None => {
-            let p = ordered.last().copied().unwrap_or(config.polynomial.selected_power);
+            let p = ordered
+                .last()
+                .copied()
+                .unwrap_or(config.polynomial.selected_power);
             let rule = format!(
                 "ни одна степень из {candidates:?} не сохранила решение на сетке; \
                  использована наибольшая ({p}) — результат требует внимания"
@@ -897,7 +909,11 @@ pub fn run(config: &StudyConfig, out_root: &Path) -> Result<StudyReport> {
     for (k, c) in selected.coeffs.iter().enumerate() {
         coeff_csv.push_str(&format!("{k},{},{:.17e}\n", 2 * k + 1, c));
     }
-    artifacts.push(write_text(&out_dir, "polynomial_coefficients.csv", &coeff_csv)?);
+    artifacts.push(write_text(
+        &out_dir,
+        "polynomial_coefficients.csv",
+        &coeff_csv,
+    )?);
 
     // --- 5. Ключи, прокси-перешифрование и основной прогон ----------------
     let lab_keys = ctx.keygen()?;
@@ -921,10 +937,13 @@ pub fn run(config: &StudyConfig, out_root: &Path) -> Result<StudyReport> {
     // Прогрев: первый вызов инициализирует внутренние структуры OpenFHE.
     let batch = config.he.batch_size as usize;
     let warm: Vec<Vec<f64>> = val_x.iter().take(8).cloned().collect();
-    let _ = run_he_pipeline(&ctx, &lab_pk, &hosp_sk, &rekey, &model, &selected, &warm, batch, 0.0)?;
+    let _ = run_he_pipeline(
+        &ctx, &lab_pk, &hosp_sk, &rekey, &model, &selected, &warm, batch, 0.0,
+    )?;
 
-    let he_run =
-        run_he_pipeline(&ctx, &lab_pk, &hosp_sk, &rekey, &model, &selected, &val_x, batch, 0.0)?;
+    let he_run = run_he_pipeline(
+        &ctx, &lab_pk, &hosp_sk, &rekey, &model, &selected, &val_x, batch, 0.0,
+    )?;
 
     // Режим B: больница получает вероятность, решение — p ≥ 0.5.
     let prob_decisions = he::threshold_probabilities(&he_run.probabilities);
@@ -951,7 +970,11 @@ pub fn run(config: &StudyConfig, out_root: &Path) -> Result<StudyReport> {
          и применяет точную сигмоиду локально",
         &val_probs,
         &{
-            let mut v: Vec<f64> = he_run.logits.iter().map(|e| crate::detmath::sigmoid(*e)).collect();
+            let mut v: Vec<f64> = he_run
+                .logits
+                .iter()
+                .map(|e| crate::detmath::sigmoid(*e))
+                .collect();
             v.truncate(val_probs.len());
             v
         },
@@ -1036,9 +1059,7 @@ pub fn run(config: &StudyConfig, out_root: &Path) -> Result<StudyReport> {
             let observed = he_mismatches(&ctrl_dec, &exact_dec);
             runs.push(NegativeControlRun {
                 name: label.to_string(),
-                description: format!(
-                    "аддитивный сдвиг Δp = {delta:+.3} к гомоморфной вероятности"
-                ),
+                description: format!("аддитивный сдвиг Δp = {delta:+.3} к гомоморфной вероятности"),
                 n_patients: val_x.len(),
                 expected_plaintext_mismatches: expected,
                 observed_he_mismatches: observed,
@@ -1086,22 +1107,18 @@ pub fn run(config: &StudyConfig, out_root: &Path) -> Result<StudyReport> {
                 break; // первая степень, реально меняющая решения на выборке
             }
         }
-        runs.push(
-            degraded.unwrap_or_else(|| NegativeControlRun {
-                name: "degraded_approximation_deg3".to_string(),
-                description: "деградация до 3-й степени не меняет решений на выборке"
-                    .to_string(),
-                n_patients: val_x.len(),
-                expected_plaintext_mismatches: 0,
-                observed_he_mismatches: 0,
-                observed_matches_expectation: true,
-                false_positives: 0,
-                false_negatives: 0,
-                detection_possible: false,
-                note: "граница консервативна: расхождений нет даже при сильной деградации"
-                    .to_string(),
-            }),
-        );
+        runs.push(degraded.unwrap_or_else(|| NegativeControlRun {
+            name: "degraded_approximation_deg3".to_string(),
+            description: "деградация до 3-й степени не меняет решений на выборке".to_string(),
+            n_patients: val_x.len(),
+            expected_plaintext_mismatches: 0,
+            observed_he_mismatches: 0,
+            observed_matches_expectation: true,
+            false_positives: 0,
+            false_negatives: 0,
+            detection_possible: false,
+            note: "граница консервативна: расхождений нет даже при сильной деградации".to_string(),
+        }));
 
         // 4) Предельно допустимые профили за пределами B (проверка границы
         //    области гарантии). Отвечает на претензию раунда 3, что прежний
@@ -1191,7 +1208,10 @@ pub fn run(config: &StudyConfig, out_root: &Path) -> Result<StudyReport> {
                     }
                 }
             }
-            let min_abs = etas_ob.iter().map(|e| e.abs()).fold(f64::INFINITY, f64::min);
+            let min_abs = etas_ob
+                .iter()
+                .map(|e| e.abs())
+                .fold(f64::INFINITY, f64::min);
             let max_abs = etas_ob.iter().map(|e| e.abs()).fold(0.0, f64::max);
             runs.push(NegativeControlRun {
                 name: "out_of_bound".to_string(),
@@ -1463,7 +1483,11 @@ pub fn run(config: &StudyConfig, out_root: &Path) -> Result<StudyReport> {
         .map_err(|e| Error(format!("сериализация manifest.json: {e}")))?;
     write_text(&out_dir, "manifest.json", &manifest_json)?;
 
-    Ok(StudyReport { run_id, output_dir: out_dir, results })
+    Ok(StudyReport {
+        run_id,
+        output_dir: out_dir,
+        results,
+    })
 }
 
 #[cfg(test)]
@@ -1509,7 +1533,10 @@ mod tests {
     #[test]
     fn default_config_is_well_formed() {
         let c = default_study_config();
-        assert!(c.polynomial.sweep_powers.contains(&c.polynomial.selected_power));
+        assert!(c
+            .polynomial
+            .sweep_powers
+            .contains(&c.polynomial.selected_power));
         assert!(c.evaluation.alpha > 0.0 && c.evaluation.alpha < 1.0);
         assert!(c.evaluation.equivalence_margin > 0.0);
         assert!(!c.scalability.sizes.is_empty());
@@ -1528,7 +1555,10 @@ mod tests {
         assert!(report.results.determinism.cohort_bit_identical);
         assert!(report.results.determinism.model_bit_identical);
         assert!(report.results.determinism.polynomial_bit_identical);
-        assert!(report.results.polynomial.sign_preserving, "многочлен не сохраняет знак");
+        assert!(
+            report.results.polynomial.sign_preserving,
+            "многочлен не сохраняет знак"
+        );
         assert!(
             report.results.polynomial.min_delta_positive_side > 0.0,
             "минимум Δ⁺ = {}",
@@ -1574,19 +1604,31 @@ mod tests {
             .as_ref()
             .expect("контроль чувствительности включён в конфигурации теста");
         assert!(!nc.runs.is_empty(), "нет ни одного прогона контроля");
-        let base = nc.runs.iter().find(|r| r.name == "baseline").expect("нет baseline");
+        let base = nc
+            .runs
+            .iter()
+            .find(|r| r.name == "baseline")
+            .expect("нет baseline");
         assert_eq!(base.expected_plaintext_mismatches, 0);
         assert_eq!(base.observed_he_mismatches, 0);
         for r in &nc.runs {
-            assert!(r.observed_matches_expectation,
-                    "прогон {}: наблюдение {} ≠ ожидание {} (вне допуска)",
-                    r.name, r.observed_he_mismatches, r.expected_plaintext_mismatches);
+            assert!(
+                r.observed_matches_expectation,
+                "прогон {}: наблюдение {} ≠ ожидание {} (вне допуска)",
+                r.name, r.observed_he_mismatches, r.expected_plaintext_mismatches
+            );
             // обнаружение невозможно там, где ожидание нулевое, и обязательно там, где оно > 0
-            assert!(r.detection_possible == (r.observed_he_mismatches > 0),
-                    "прогон {}: detection_possible не согласован с наблюдением", r.name);
+            assert!(
+                r.detection_possible == (r.observed_he_mismatches > 0),
+                "прогон {}: detection_possible не согласован с наблюдением",
+                r.name
+            );
             if r.expected_plaintext_mismatches > 0 {
-                assert!(r.detection_possible,
-                        "прогон {}: ожидание > 0, но ничего не обнаружено", r.name);
+                assert!(
+                    r.detection_possible,
+                    "прогон {}: ожидание > 0, но ничего не обнаружено",
+                    r.name
+                );
             }
         }
         // хотя бы один прогон не нейтрален (ожидание > 0) — иначе контроль вырожден
@@ -1596,7 +1638,11 @@ mod tests {
         );
 
         // Артефакты записаны и перечислены.
-        assert!(report.results.artifacts.len() >= 7, "артефактов {}", report.results.artifacts.len());
+        assert!(
+            report.results.artifacts.len() >= 7,
+            "артефактов {}",
+            report.results.artifacts.len()
+        );
         for a in &report.results.artifacts {
             let p = report.output_dir.join(&a.file);
             assert!(p.exists(), "нет артефакта {}", a.file);
@@ -1628,7 +1674,10 @@ mod tests {
         let text = std::fs::read_to_string(report.output_dir.join("results.json")).expect("чтение");
         let parsed: StudyResults = serde_json::from_str(&text).expect("разбор results.json");
         assert_eq!(parsed.run_id, report.results.run_id);
-        assert_eq!(parsed.model.feature_names, report.results.model.feature_names);
+        assert_eq!(
+            parsed.model.feature_names,
+            report.results.model.feature_names
+        );
         assert_eq!(parsed.scalability.len(), report.results.scalability.len());
         let _ = std::fs::remove_dir_all(&dir);
     }

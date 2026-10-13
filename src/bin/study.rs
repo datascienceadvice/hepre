@@ -24,13 +24,18 @@ fn usage() {
     eprintln!("  study [--config <файл>] [--out <каталог>] [--write-default-config <файл>]");
     eprintln!();
     eprintln!("  --config <файл>                конфигурация исследования (JSON)");
-    eprintln!("  --out <каталог>                корень для результатов (по умолчанию {DEFAULT_OUT})");
+    eprintln!(
+        "  --out <каталог>                корень для результатов (по умолчанию {DEFAULT_OUT})"
+    );
     eprintln!("  --write-default-config <файл>  записать конфигурацию по умолчанию и выйти");
     eprintln!("  --help                         эта справка");
 }
 
 fn arg_after(args: &[String], name: &str) -> Option<String> {
-    args.iter().position(|a| a == name).and_then(|i| args.get(i + 1)).cloned()
+    args.iter()
+        .position(|a| a == name)
+        .and_then(|i| args.get(i + 1))
+        .cloned()
 }
 
 fn main() {
@@ -89,7 +94,10 @@ fn main() {
                     }
                 }
             } else {
-                println!("Конфигурация: встроенная по умолчанию ({} не найден)", DEFAULT_CONFIG);
+                println!(
+                    "Конфигурация: встроенная по умолчанию ({} не найден)",
+                    DEFAULT_CONFIG
+                );
                 study::default_study_config()
             }
         }
@@ -108,10 +116,12 @@ fn main() {
     );
     println!(
         "Многочлен: степень {} (граница B подбирается по данным), глубина контекста {}",
-        config.polynomial.selected_power,
-        config.he.depth_margin
+        config.polynomial.selected_power, config.he.depth_margin
     );
-    println!("Первичная конечная точка: доля расхождений, порог {}", config.evaluation.equivalence_margin);
+    println!(
+        "Первичная конечная точка: доля расхождений, порог {}",
+        config.evaluation.equivalence_margin
+    );
     println!();
 
     let report = match study::run(&config, &out_root) {
@@ -141,7 +151,10 @@ fn main() {
         "   Обучение: {} наблюдений, {} событий, {} шагов, сходимость: {}",
         r.model.n_train, r.model.n_events_train, r.model.iterations, r.model.converged
     );
-    println!("   Событий на переменную (EPV): {:.1}", r.model.events_per_variable);
+    println!(
+        "   Событий на переменную (EPV): {:.1}",
+        r.model.events_per_variable
+    );
     println!(
         "   AUC = {:.4} (95 % ДИ {:.4}–{:.4}), Brier = {:.4}",
         r.clinical_performance.auc.auc,
@@ -170,7 +183,10 @@ fn main() {
         r.polynomial.selected_mult_depth,
         r.polynomial.context_depth_used
     );
-    println!("   Кольцо N = {}, слотов в пакете: {}", r.polynomial.ring_dimension, r.polynomial.slots_per_batch);
+    println!(
+        "   Кольцо N = {}, слотов в пакете: {}",
+        r.polynomial.ring_dimension, r.polynomial.slots_per_batch
+    );
     println!(
         "   Неотрицательные коэффициенты: {}, сохранение знака решения: {}, монотонность: {}",
         r.polynomial.all_coefficients_nonnegative,
@@ -209,8 +225,11 @@ fn main() {
         println!("   [{}]", mode.mode);
         println!(
             "     max|Δp| = {:.3e}, RMSE = {:.3e}, среднее |Δp| = {:.3e} (ДИ {:.3e}–{:.3e})",
-            mode.max_abs_error, mode.rmse, mode.mean_abs_error,
-            mode.mean_abs_error_ci.0, mode.mean_abs_error_ci.1
+            mode.max_abs_error,
+            mode.rmse,
+            mode.mean_abs_error,
+            mode.mean_abs_error_ci.0,
+            mode.mean_abs_error_ci.1
         );
         println!(
             "     расхождений решений: {} из {} ({:.6} %, 95 % ДИ {:.6}–{:.6} %)",
@@ -223,11 +242,18 @@ fn main() {
         println!(
             "     эквивалентность (порог {:.2} %): {}",
             mode.equivalence.margin * 100.0,
-            if mode.equivalence.equivalent { "достигнута" } else { "НЕ достигнута" }
+            if mode.equivalence.equivalent {
+                "достигнута"
+            } else {
+                "НЕ достигнута"
+            }
         );
     }
 
-    println!("--- Масштабируемость (медиана из {} повторов) ---", r.scalability.first().map(|p| p.repeats).unwrap_or(0));
+    println!(
+        "--- Масштабируемость (медиана из {} повторов) ---",
+        r.scalability.first().map(|p| p.repeats).unwrap_or(0)
+    );
     println!(
         "   {:>7} {:>7} {:>10} {:>10} {:>10} {:>10} {:>10} {:>12}",
         "N", "пакетов", "Encrypt", "Logit", "Sigmoid", "PRE", "Decrypt", "итого"
@@ -259,7 +285,10 @@ fn main() {
 
     println!();
     println!("Результаты: {}", report.output_dir.display());
-    println!("Манифест:   {}", report.output_dir.join("manifest.json").display());
+    println!(
+        "Манифест:   {}",
+        report.output_dir.join("manifest.json").display()
+    );
     println!("Идентификатор запуска: {}", report.run_id);
 }
 

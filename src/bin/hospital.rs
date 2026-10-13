@@ -13,7 +13,10 @@ mod common;
 
 use std::path::PathBuf;
 
-use common::{err_exit, make_context, parse_model, parse_patients, read_handoff, resolve_dir, resolve_json_arg, KIND_SCORES};
+use common::{
+    err_exit, make_context, parse_model, parse_patients, read_handoff, resolve_dir,
+    resolve_json_arg, KIND_SCORES,
+};
 use hepre::scoring::decrypt_scores;
 
 fn main() {
@@ -50,20 +53,33 @@ fn cmd_keygen(args: &[String]) {
     let cc = make_context();
     println!("--- Больница: генерация ключей ---");
 
-    let keys = cc.keygen().unwrap_or_else(|e| err_exit(format!("keygen: {e}")));
+    let keys = cc
+        .keygen()
+        .unwrap_or_else(|e| err_exit(format!("keygen: {e}")));
     let pk = keys.public_key().unwrap_or_else(|e| err_exit(e));
     let sk = keys.secret_key().unwrap_or_else(|e| err_exit(e));
 
     let pk_path = flags_dir.join("hosp.pk.bin");
     let sk_path = flags_dir.join("hosp.sk.bin");
-    std::fs::create_dir_all(&flags_dir).unwrap_or_else(|e| err_exit(format!("create_dir_all: {e}")));
+    std::fs::create_dir_all(&flags_dir)
+        .unwrap_or_else(|e| err_exit(format!("create_dir_all: {e}")));
     let pk_bytes = pk.serialize().unwrap_or_else(|e| err_exit(e));
     let sk_bytes = sk.serialize().unwrap_or_else(|e| err_exit(e));
-    std::fs::write(&pk_path, &pk_bytes).unwrap_or_else(|e| err_exit(format!("запись {}: {e}", pk_path.display())));
-    std::fs::write(&sk_path, &sk_bytes).unwrap_or_else(|e| err_exit(format!("запись {}: {e}", sk_path.display())));
+    std::fs::write(&pk_path, &pk_bytes)
+        .unwrap_or_else(|e| err_exit(format!("запись {}: {e}", pk_path.display())));
+    std::fs::write(&sk_path, &sk_bytes)
+        .unwrap_or_else(|e| err_exit(format!("запись {}: {e}", sk_path.display())));
 
-    println!("   Публичный ключ  : {} ({})", pk_path.display(), common::kb(pk_bytes.len()));
-    println!("   Секретный ключ  : {} ({})  — хранится только у больницы", sk_path.display(), common::kb(sk_bytes.len()));
+    println!(
+        "   Публичный ключ  : {} ({})",
+        pk_path.display(),
+        common::kb(pk_bytes.len())
+    );
+    println!(
+        "   Секретный ключ  : {} ({})  — хранится только у больницы",
+        sk_path.display(),
+        common::kb(sk_bytes.len())
+    );
     println!("   Публичный ключ передаётся лаборатории для ReKeyGen.");
 }
 
@@ -72,7 +88,8 @@ fn cmd_decrypt(args: &[String]) {
         Some(idx) if idx + 1 < args.len() => resolve_dir(&args[idx + 1]),
         _ => PathBuf::from("handoff"),
     };
-    let model_raw = arg_after(args, "--model").unwrap_or_else(|| err_exit("decrypt: требуется --model '<json или файл>'"));
+    let model_raw = arg_after(args, "--model")
+        .unwrap_or_else(|| err_exit("decrypt: требуется --model '<json или файл>'"));
     let patients_raw = arg_after(args, "--patients");
     let model_str = resolve_json_arg("--model", &model_raw).unwrap_or_else(|e| err_exit(e));
     let model = parse_model(&model_str).unwrap_or_else(|e| err_exit(e));
@@ -82,12 +99,18 @@ fn cmd_decrypt(args: &[String]) {
 
     let sk_path = dir.join("hosp.sk.bin");
     let scores_path = dir.join("scores.ct.bin");
-    let sk_bytes = std::fs::read(&sk_path).unwrap_or_else(|e| err_exit(format!("чтение {}: {e}", sk_path.display())));
-    let sk = cc.deserialize_secret_key(&sk_bytes).unwrap_or_else(|e| err_exit(format!("deserialize_sk: {e}")));
+    let sk_bytes = std::fs::read(&sk_path)
+        .unwrap_or_else(|e| err_exit(format!("чтение {}: {e}", sk_path.display())));
+    let sk = cc
+        .deserialize_secret_key(&sk_bytes)
+        .unwrap_or_else(|e| err_exit(format!("deserialize_sk: {e}")));
 
     let (kind, n, _f, blobs) = read_handoff(&scores_path).unwrap_or_else(|e| err_exit(e));
     if kind != KIND_SCORES {
-        err_exit(format!("{}: не scores-контейнер (kind={kind})", scores_path.display()));
+        err_exit(format!(
+            "{}: не scores-контейнер (kind={kind})",
+            scores_path.display()
+        ));
     }
     let cts = common::blobs_to_ciphertexts(&cc, &blobs).unwrap_or_else(|e| err_exit(e));
 
@@ -104,7 +127,9 @@ fn cmd_decrypt(args: &[String]) {
     println!();
     println!(
         "   {:<6} {:>12} {:>16}",
-        "Пац.", "Скор (HE)", format!("Риск >= {:.2}?", model.threshold)
+        "Пац.",
+        "Скор (HE)",
+        format!("Риск >= {:.2}?", model.threshold)
     );
     let mut n_risk = 0usize;
     for (i, s) in scores.iter().enumerate() {
@@ -113,7 +138,12 @@ fn cmd_decrypt(args: &[String]) {
             n_risk += 1;
         }
         let name = format!("P{}", i + 1);
-        println!("   {:<6} {:>12.4} {:>16}", name, s, if risk { "ДА" } else { "нет" });
+        println!(
+            "   {:<6} {:>12.4} {:>16}",
+            name,
+            s,
+            if risk { "ДА" } else { "нет" }
+        );
     }
     println!();
     println!("   Итог: пациентов = {}, риск у {}", n, n_risk);
@@ -136,12 +166,17 @@ fn cmd_decrypt(args: &[String]) {
             "   Сверка (демонстрационная): max|HE скор - открытый скор| = {max_err:.1e}; несовпадений порога: {mismatches}"
         );
         if mismatches > 0 || max_err > 1e-2 {
-            err_exit(format!("сверка не сошлась: max|err|={max_err:.1e}, mismatches={mismatches}"));
+            err_exit(format!(
+                "сверка не сошлась: max|err|={max_err:.1e}, mismatches={mismatches}"
+            ));
         }
         println!("   Сверка пройдена: max|err| < 1e-2, расхождений с порогом нет.");
     }
 }
 
 fn arg_after(args: &[String], name: &str) -> Option<String> {
-    args.iter().position(|a| a == name).and_then(|i| args.get(i + 1)).cloned()
+    args.iter()
+        .position(|a| a == name)
+        .and_then(|i| args.get(i + 1))
+        .cloned()
 }
