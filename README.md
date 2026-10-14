@@ -54,8 +54,12 @@ python scripts\compare_runs.py results\20260925-042702_4659cac3 results\20261012
 python scripts\validate_metadata.py
 ```
 
-The repository ships **nine study runs**; the canonical one is
-`results/20261013-045947_4659cac3/` (the manuscript cites its numbers). The pair
+The repository ships the study runs. The canonical one is
+`results/20261013-045947_4659cac3/` (the manuscript cites its numbers);
+`results/20261014-132941_acd70ff4/` is an **appendix run** that extends the
+scalability test to 120,000 profiles (`configs/study_scale_120k.json`; the rest of
+the protocol is unchanged), and `results/20261014-131713_acd70ff4/` carries the
+per-patient `probabilities.csv` artifact (open vs encrypted probability). The pair
 `results/20260925-042702_4659cac3/` and `results/20261012-083347_4659cac3/` is the
 reproducibility check run by the command above: every exact invariant defined by the
 script matches, including the `cohort.csv` digest; only CKKS-noise quantities and

@@ -17,7 +17,8 @@
 #![allow(clippy::inconsistent_digit_grouping)] // разделители цифр — по исходным данным
 #![allow(clippy::module_inception)] // соглашение имён модулей сохранено
 #![allow(clippy::too_many_arguments)] // сигнатуры числовых конвейеров объёмны сознательно
-#![allow(clippy::manual_div_ceil)] // явная формула деления с округлением документирует алгоритм
+#![allow(clippy::manual_div_ceil)]
+// явная формула деления с округлением документирует алгоритм
 //! `take_last_error` и возвращается как [`Error`].
 
 pub(crate) mod ffi;

@@ -1,0 +1,814 @@
+{
+  "study_name": "HEPRE: приватный скоринг риска СД2 (CKKS + PRE)",
+  "design": "Методологическое исследование валидации: модель разработана в открытом виде на обучающей выборке, оценивается гомоморфно на независимой валидационной выборке; первичная конечная точка — доля расхождений бинарных решений с открытым эталоном; отрицательный контроль проверяет чувствительность метрики.",
+  "run_id": "20261014-131713_acd70ff4",
+  "started_utc": "2026-10-14T13:17:13Z",
+  "finished_utc": "2026-10-14T13:19:06Z",
+  "duration_seconds": 112.6361873,
+  "config": {
+    "study_name": "HEPRE: приватный скоринг риска СД2 (CKKS + PRE)",
+    "design": "Методологическое исследование валидации: модель разработана в открытом виде на обучающей выборке, оценивается гомоморфно на независимой валидационной выборке; первичная конечная точка — доля расхождений бинарных решений с открытым эталоном; отрицательный контроль проверяет чувствительность метрики.",
+    "cohort": {
+      "seed": 20260907,
+      "n_derivation": 8000,
+      "n_validation": 4000,
+      "target_prevalence": 0.12,
+      "prevalence_calibration_n": 200000,
+      "predictors": [
+        {
+          "name": "hba1c_pct",
+          "units": "%",
+          "description": "Гликированный гемоглобин HbA1c",
+          "distribution": {
+            "kind": "normal",
+            "mean": 5.6,
+            "sd": 0.85
+          },
+          "min": 4.0,
+          "max": 14.0,
+          "beta_true": 1.1
+        },
+        {
+          "name": "fasting_glucose_mmol",
+          "units": "ммоль/л",
+          "description": "Глюкоза плазмы натощак",
+          "distribution": {
+            "kind": "normal",
+            "mean": 5.4,
+            "sd": 1.1
+          },
+          "min": 3.0,
+          "max": 20.0,
+          "beta_true": 0.45
+        },
+        {
+          "name": "triglycerides_mmol",
+          "units": "ммоль/л",
+          "description": "Триглицериды",
+          "distribution": {
+            "kind": "normal",
+            "mean": 1.7,
+            "sd": 0.85
+          },
+          "min": 0.3,
+          "max": 12.0,
+          "beta_true": 0.3
+        },
+        {
+          "name": "hdl_mmol",
+          "units": "ммоль/л",
+          "description": "Холестерин липопротеинов высокой плотности",
+          "distribution": {
+            "kind": "normal",
+            "mean": 1.4,
+            "sd": 0.35
+          },
+          "min": 0.4,
+          "max": 3.2,
+          "beta_true": -0.6
+        },
+        {
+          "name": "bmi",
+          "units": "кг/м²",
+          "description": "Индекс массы тела",
+          "distribution": {
+            "kind": "normal",
+            "mean": 27.5,
+            "sd": 5.0
+          },
+          "min": 15.0,
+          "max": 55.0,
+          "beta_true": 0.07
+        },
+        {
+          "name": "age_years",
+          "units": "годы",
+          "description": "Возраст",
+          "distribution": {
+            "kind": "normal",
+            "mean": 52.0,
+            "sd": 13.0
+          },
+          "min": 18.0,
+          "max": 90.0,
+          "beta_true": 0.035
+        },
+        {
+          "name": "family_history",
+          "units": "0/1",
+          "description": "Семейный анамнез диабета",
+          "distribution": {
+            "kind": "bernoulli",
+            "p": 0.3
+          },
+          "min": 0.0,
+          "max": 1.0,
+          "beta_true": 0.75
+        }
+      ]
+    },
+    "model": {
+      "lambda": 0.001,
+      "max_iter": 100,
+      "tol": 1e-12
+    },
+    "polynomial": {
+      "sweep_powers": [
+        3,
+        5,
+        7,
+        9,
+        11,
+        13,
+        15
+      ],
+      "selected_power": 11,
+      "max_abs_error_target": 0.02,
+      "bound_margin": 1.1,
+      "min_bound": 4.0
+    },
+    "evaluation": {
+      "alpha": 0.05,
+      "equivalence_margin": 0.01,
+      "bootstrap_replicates": 2000,
+      "bootstrap_seed": 20260907
+    },
+    "he": {
+      "batch_size": 8192,
+      "scaling_mod_size": 40,
+      "depth_margin": 3
+    },
+    "scalability": {
+      "sizes": [
+        1000,
+        5000,
+        10000,
+        20000,
+        40000
+      ],
+      "repeats": 3,
+      "cohort_size": 40000,
+      "calibration_n": 20000
+    },
+    "negative_control": {
+      "enabled": true,
+      "shift": 0.02,
+      "degraded_powers": [
+        9,
+        7,
+        5,
+        3
+      ]
+    }
+  },
+  "environment": {
+    "rustc_version": "rustc 1.97.0 (2d8144b78 2026-07-07)",
+    "arch": "x86_64",
+    "os": "windows",
+    "os_version": "windows",
+    "cpu_count": 8,
+    "openfhe_home": "D:/lair/hepre/vendor/openfhe-install",
+    "crate_version": "0.1.0",
+    "git_revision": "acd70ff43f5cccb00f6580de57a13f285f5b9176",
+    "git_branch": "master",
+    "started_unix": 1791983833,
+    "started_utc": "2026-10-14T13:17:13Z"
+  },
+  "cohort": {
+    "intercept_true": -14.847833779902118,
+    "target_prevalence": 0.12,
+    "calibration_iterations": 47,
+    "realized_prevalence_derivation": 0.115375,
+    "realized_prevalence_validation": 0.1175,
+    "realized_prevalence_all": 0.11608333333333333,
+    "eta_mean_all": -2.5126189458373815,
+    "eta_sd_all": 1.2260577406089408,
+    "eta_min_all": -6.615757104453669,
+    "eta_max_all": 2.3771745896163026,
+    "max_abs_eta_all": 6.615757104453669,
+    "feature_summary": [
+      {
+        "name": "hba1c_pct",
+        "units": "%",
+        "mean": 5.655630180340195,
+        "sd": 0.7862990887041861,
+        "min": 4.001386928866372,
+        "max": 8.806291450655152,
+        "missing_fraction": 0.0
+      },
+      {
+        "name": "fasting_glucose_mmol",
+        "units": "ммоль/л",
+        "mean": 5.441664315992984,
+        "sd": 1.0574573222561636,
+        "min": 3.001214357266653,
+        "max": 9.68487502779855,
+        "missing_fraction": 0.0
+      },
+      {
+        "name": "triglycerides_mmol",
+        "units": "ммоль/л",
+        "mean": 1.7927296501967167,
+        "sd": 0.7687861311715557,
+        "min": 0.30012859085752996,
+        "max": 5.179807189970359,
+        "missing_fraction": 0.0
+      },
+      {
+        "name": "hdl_mmol",
+        "units": "ммоль/л",
+        "mean": 1.3999910168739171,
+        "sd": 0.34879633258001813,
+        "min": 0.40708392351226563,
+        "max": 2.761387237939113,
+        "missing_fraction": 0.0
+      },
+      {
+        "name": "bmi",
+        "units": "кг/м²",
+        "mean": 27.504705908345482,
+        "sd": 4.980328176771777,
+        "min": 15.010515879529027,
+        "max": 47.77614224123623,
+        "missing_fraction": 0.0
+      },
+      {
+        "name": "age_years",
+        "units": "годы",
+        "mean": 52.07304271356704,
+        "sd": 12.674230515528256,
+        "min": 18.05780210557625,
+        "max": 89.7419764784636,
+        "missing_fraction": 0.0
+      },
+      {
+        "name": "family_history",
+        "units": "0/1",
+        "mean": 0.29275,
+        "sd": 0.45504361647108593,
+        "min": 0.0,
+        "max": 1.0,
+        "missing_fraction": 0.0
+      }
+    ]
+  },
+  "model": {
+    "n_train": 8000,
+    "n_events_train": 923,
+    "iterations": 7,
+    "converged": true,
+    "lambda": 0.001,
+    "events_per_variable": 131.85714285714286,
+    "feature_names": [
+      "hba1c_pct",
+      "fasting_glucose_mmol",
+      "triglycerides_mmol",
+      "hdl_mmol",
+      "bmi",
+      "age_years",
+      "family_history"
+    ],
+    "weights_standardized": [
+      0.8541005955532779,
+      0.5247640426533161,
+      0.22024980966792365,
+      -0.20008540819879123,
+      0.3501278142861978,
+      0.45899412862192807,
+      0.38767483962288335
+    ],
+    "intercept_standardized": -2.5777042570056063,
+    "means": [
+      5.654194553041584,
+      5.442825483572461,
+      1.7938489580233596,
+      1.3970543808858378,
+      27.47579926663409,
+      52.14946637606655,
+      0.294125
+    ],
+    "sds": [
+      0.7907552694273512,
+      1.0497155531926023,
+      0.7693419155515392,
+      0.3469876398233168,
+      4.999938409004969,
+      12.680528402551966,
+      0.45567690259104315
+    ],
+    "odds_ratios_per_unit": [
+      2.9449957426720466,
+      1.6485740553469062,
+      1.3314697235623612,
+      0.5617852896137298,
+      1.0725365231471757,
+      1.0368598459432348,
+      2.341441886217165
+    ]
+  },
+  "polynomial": {
+    "bound": 7.443816204212385,
+    "max_abs_eta_observed": 6.767105640193076,
+    "selected_power": 11,
+    "selected_mult_depth": 4,
+    "required_context_depth": 4,
+    "context_depth_used": 7,
+    "ring_dimension": 32768,
+    "slots_per_batch": 8192,
+    "max_abs_error": 0.004130109771795953,
+    "max_abs_error_on_data": 0.00413010773562833,
+    "sign_preserving": true,
+    "min_delta_positive_side": 0.00017988792920103021,
+    "all_coefficients_nonnegative": false,
+    "selection_rule": "минимальная степень 11 из [3, 5, 7, 9, 11, 13, 15], сохраняющая бинарное решение на сетке из 8001 точек и укладывающаяся в целевую ошибку 0.020",
+    "monotone": false,
+    "decision_mismatches_on_data": 0,
+    "decision_mismatches_on_grid": 0,
+    "coeffs": [
+      1.7988793541290489,
+      -6.211855019318005,
+      16.217550607150805,
+      -24.18390251297861,
+      18.430100009159908,
+      -5.5530137016979175
+    ],
+    "sweep": [
+      {
+        "power": 3,
+        "mult_depth": 1,
+        "block_size": 2,
+        "all_coefficients_nonnegative": false,
+        "monotone": false,
+        "max_abs_error": 0.10135445087452422,
+        "max_error_at": -1.6473165259922011
+      },
+      {
+        "power": 5,
+        "mult_depth": 2,
+        "block_size": 3,
+        "all_coefficients_nonnegative": false,
+        "monotone": false,
+        "max_abs_error": 0.046227938069647506,
+        "max_error_at": -1.2922464930512698
+      },
+      {
+        "power": 7,
+        "mult_depth": 3,
+        "block_size": 2,
+        "all_coefficients_nonnegative": false,
+        "monotone": false,
+        "max_abs_error": 0.02081270728926876,
+        "max_error_at": 1.0629769539615288
+      },
+      {
+        "power": 9,
+        "mult_depth": 4,
+        "block_size": 2,
+        "all_coefficients_nonnegative": false,
+        "monotone": false,
+        "max_abs_error": 0.009294356872000198,
+        "max_error_at": 0.902934905570962
+      },
+      {
+        "power": 11,
+        "mult_depth": 4,
+        "block_size": 2,
+        "all_coefficients_nonnegative": false,
+        "monotone": false,
+        "max_abs_error": 0.004130109771795953,
+        "max_error_at": 0.7838338463035638
+      },
+      {
+        "power": 13,
+        "mult_depth": 5,
+        "block_size": 2,
+        "all_coefficients_nonnegative": false,
+        "monotone": false,
+        "max_abs_error": 0.0018297033683531971,
+        "max_error_at": 0.6930192886121728
+      },
+      {
+        "power": 15,
+        "mult_depth": 5,
+        "block_size": 2,
+        "all_coefficients_nonnegative": false,
+        "monotone": false,
+        "max_abs_error": 0.0008090233014803605,
+        "max_error_at": -0.620069889810892
+      }
+    ]
+  },
+  "clinical_performance": {
+    "auc": {
+      "auc": 0.7937303357241878,
+      "se": 0.010812558607873736,
+      "ci_low": 0.7725381102549413,
+      "ci_high": 0.8149225611934343,
+      "n_positive": 470,
+      "n_negative": 3530
+    },
+    "brier": 0.08729550131113417,
+    "calibration_intercept": 0.058983504207281545,
+    "calibration_slope": 1.0009435291154822,
+    "prevalence_validation": 0.1175,
+    "youden_threshold": 0.10103003152187234,
+    "at_default_threshold": {
+      "confusion": {
+        "true_positive": 61,
+        "false_positive": 33,
+        "true_negative": 3497,
+        "false_negative": 409
+      },
+      "sensitivity": 0.12978723404255318,
+      "sensitivity_ci": [
+        0.10238068958892377,
+        0.16319644909885556
+      ],
+      "specificity": 0.9906515580736543,
+      "specificity_ci": [
+        0.9869007917235959,
+        0.9933355998517992
+      ],
+      "ppv": 0.648936170212766,
+      "ppv_ci": [
+        0.5483320854722032,
+        0.7378451683802835
+      ],
+      "npv": 0.895289298515105,
+      "npv_ci": [
+        0.8852958410980458,
+        0.9045060044546704
+      ],
+      "accuracy": 0.8895,
+      "accuracy_ci": [
+        0.8794081130937018,
+        0.8988444805824166
+      ],
+      "f1": 0.21631205673758866,
+      "mcc": 0.25601925336283143
+    },
+    "at_youden_threshold": {
+      "confusion": {
+        "true_positive": 349,
+        "false_positive": 1082,
+        "true_negative": 2448,
+        "false_negative": 121
+      },
+      "sensitivity": 0.7425531914893617,
+      "sensitivity_ci": [
+        0.7011701049521888,
+        0.7800034938385765
+      ],
+      "specificity": 0.693484419263456,
+      "specificity_ci": [
+        0.6780717410327365,
+        0.7084764434049048
+      ],
+      "ppv": 0.24388539482879107,
+      "ppv_ci": [
+        0.22234107894379168,
+        0.2668010869096446
+      ],
+      "npv": 0.952899961074348,
+      "npv_ci": [
+        0.9440097851699268,
+        0.9604377049840208
+      ],
+      "accuracy": 0.69925,
+      "accuracy_ci": [
+        0.684852954320576,
+        0.7132647075278621
+      ],
+      "f1": 0.36717517096265123,
+      "mcc": 0.29292629861306013
+    },
+    "calibration_deciles": [
+      [
+        0.009992713460679948,
+        0.01,
+        400
+      ],
+      [
+        0.020138840918364657,
+        0.025,
+        400
+      ],
+      [
+        0.03169472611190861,
+        0.0275,
+        400
+      ],
+      [
+        0.04486193243950616,
+        0.0425,
+        400
+      ],
+      [
+        0.05956735457169494,
+        0.075,
+        400
+      ],
+      [
+        0.07841382471115539,
+        0.09,
+        400
+      ],
+      [
+        0.1041177000112982,
+        0.0975,
+        400
+      ],
+      [
+        0.14561251172103812,
+        0.1575,
+        400
+      ],
+      [
+        0.21682586053245154,
+        0.235,
+        400
+      ],
+      [
+        0.41445945617240626,
+        0.415,
+        400
+      ]
+    ]
+  },
+  "keys_and_volume": {
+    "public_key_bytes": 6294045,
+    "secret_key_bytes": 2361194,
+    "proxy_rekey_bytes": 18878687,
+    "rekeygen_ms": 205.04330000000002,
+    "feature_batch_bytes": 33047469,
+    "result_bytes": 5247070,
+    "n_patients": 4000,
+    "bytes_per_patient_features": 8261.86725
+  },
+  "he_probability_mode": {
+    "mode": "B_gomomorfnaya_veroyatnost",
+    "description": "Сервер вычисляет σ(η) многочленом и перешифровывает вероятность; больница расшифровывает вероятность и сравнивает с 0.5",
+    "max_abs_error": 0.004130125741120816,
+    "rmse": 0.002379421519045776,
+    "mean_abs_error": 0.0021202061956542995,
+    "p99_abs_error": 0.0041233545028294015,
+    "mean_abs_error_ci": [
+      0.002086179494679624,
+      0.0021525244534909894
+    ],
+    "discordant": 0,
+    "total": 4000,
+    "discordance_rate": 0.0,
+    "discordance_ci": [
+      0.0,
+      0.0009217947494826184
+    ],
+    "sign_mismatches": 0,
+    "equivalence": {
+      "observed_discordance": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.0009217947494826184,
+      "margin": 0.01,
+      "alpha": 0.05,
+      "equivalent": true
+    }
+  },
+  "he_logit_mode": {
+    "mode": "A_nepreryvnyj_logit",
+    "description": "Сервер перешифровывает непрерывный логит; больница расшифровывает его и применяет точную сигмоиду локально",
+    "max_abs_error": 5.1319892224732655e-9,
+    "rmse": 5.838302585317087e-10,
+    "mean_abs_error": 3.536644795920922e-10,
+    "p99_abs_error": 2.1770659375253055e-9,
+    "mean_abs_error_ci": [
+      3.39437502588486e-10,
+      3.681263930027906e-10
+    ],
+    "discordant": 0,
+    "total": 4000,
+    "discordance_rate": 0.0,
+    "discordance_ci": [
+      0.0,
+      0.0009217947494826184
+    ],
+    "sign_mismatches": 0,
+    "equivalence": {
+      "observed_discordance": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.0009217947494826184,
+      "margin": 0.01,
+      "alpha": 0.05,
+      "equivalent": true
+    }
+  },
+  "negative_control": {
+    "enabled": true,
+    "runs": [
+      {
+        "name": "baseline",
+        "description": "основной контур, без возмущений",
+        "n_patients": 4000,
+        "expected_plaintext_mismatches": 0,
+        "observed_he_mismatches": 0,
+        "observed_matches_expectation": true,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "detection_possible": false,
+        "note": "Нейтральный прогон: ожидание и наблюдение равны нулю"
+      },
+      {
+        "name": "shift_plus",
+        "description": "аддитивный сдвиг Δp = +0.020 к гомоморфной вероятности",
+        "n_patients": 4000,
+        "expected_plaintext_mismatches": 12,
+        "observed_he_mismatches": 12,
+        "observed_matches_expectation": true,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "detection_possible": true,
+        "note": "ожидание по плейнтексту 12, наблюдение 12; совпадение точное"
+      },
+      {
+        "name": "shift_minus",
+        "description": "аддитивный сдвиг Δp = -0.020 к гомоморфной вероятности",
+        "n_patients": 4000,
+        "expected_plaintext_mismatches": 11,
+        "observed_he_mismatches": 11,
+        "observed_matches_expectation": true,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "detection_possible": true,
+        "note": "ожидание по плейнтексту 11, наблюдение 11; совпадение точное"
+      },
+      {
+        "name": "degraded_approximation_deg3",
+        "description": "аппроксимация степени 3 вместо степени 11 (деградация)",
+        "n_patients": 4000,
+        "expected_plaintext_mismatches": 0,
+        "observed_he_mismatches": 0,
+        "observed_matches_expectation": true,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "detection_possible": false,
+        "note": "ожидание по плейнтексту 0, наблюдение 0"
+      },
+      {
+        "name": "out_of_bound",
+        "description": "предельно допустимые профили за границей B: |η| ∈ [7.5; 9.4] (> 7.4)",
+        "n_patients": 2667,
+        "expected_plaintext_mismatches": 1343,
+        "observed_he_mismatches": 1343,
+        "observed_matches_expectation": true,
+        "false_positives": 1343,
+        "false_negatives": 0,
+        "detection_possible": true,
+        "note": "ожидание по плейнтексту 1343, наблюдение 1343; доля расхождений среди профилей за B: 50.4 % (ЛП 1343, ЛО 0)"
+      }
+    ],
+    "summary": "Контроль чувствительности выполнен: метрика точно воспроизводит ожидание по открытому расчёту во всех сценариях — нейтральном (0), арифметических сдвигах (±Δp), при деградации степени (0) и, главное, на предельно допустимых профилях за границей B, где гарантия сохранения знака исчезает. Нулевое число расхождений в основном прогоне — следствие сохранения знака многочлена в пределах области, а не нечувствительности метрики."
+  },
+  "scalability": [
+    {
+      "requested_n": 1000,
+      "n_patients": 1000,
+      "batches": 1,
+      "repeats": 3,
+      "encrypt_ms": 488.722,
+      "logit_ms": 374.43399999999997,
+      "sigmoid_ms": 1004.3823999999998,
+      "pre_ms": 111.8357,
+      "decrypt_ms": 201.22,
+      "total_ms": 2514.527,
+      "ms_per_patient": 2.514527,
+      "feature_ciphertext_bytes": 33047469,
+      "result_ciphertext_bytes": 5247070,
+      "max_abs_probability_error": 0.004130075095316377,
+      "sign_mismatches": 0
+    },
+    {
+      "requested_n": 5000,
+      "n_patients": 5000,
+      "batches": 1,
+      "repeats": 3,
+      "encrypt_ms": 436.8534,
+      "logit_ms": 356.53430000000003,
+      "sigmoid_ms": 829.4266,
+      "pre_ms": 106.7193,
+      "decrypt_ms": 179.2446,
+      "total_ms": 2238.5777,
+      "ms_per_patient": 0.44771553999999997,
+      "feature_ciphertext_bytes": 33047469,
+      "result_ciphertext_bytes": 5247070,
+      "max_abs_probability_error": 0.0041301108120996854,
+      "sign_mismatches": 0
+    },
+    {
+      "requested_n": 10000,
+      "n_patients": 10000,
+      "batches": 2,
+      "repeats": 3,
+      "encrypt_ms": 839.9486,
+      "logit_ms": 697.7497000000001,
+      "sigmoid_ms": 1722.4095,
+      "pre_ms": 218.64690000000002,
+      "decrypt_ms": 411.4918,
+      "total_ms": 4612.0994,
+      "ms_per_patient": 0.46120994,
+      "feature_ciphertext_bytes": 66094938,
+      "result_ciphertext_bytes": 10494140,
+      "max_abs_probability_error": 0.004130161655196418,
+      "sign_mismatches": 0
+    },
+    {
+      "requested_n": 20000,
+      "n_patients": 20000,
+      "batches": 3,
+      "repeats": 3,
+      "encrypt_ms": 1316.5982,
+      "logit_ms": 1190.1104,
+      "sigmoid_ms": 2579.0054,
+      "pre_ms": 341.01070000000004,
+      "decrypt_ms": 536.5917,
+      "total_ms": 7117.336,
+      "ms_per_patient": 0.35586680000000004,
+      "feature_ciphertext_bytes": 99142407,
+      "result_ciphertext_bytes": 15741210,
+      "max_abs_probability_error": 0.004130159551248902,
+      "sign_mismatches": 0
+    },
+    {
+      "requested_n": 40000,
+      "n_patients": 40000,
+      "batches": 5,
+      "repeats": 3,
+      "encrypt_ms": 2227.3738,
+      "logit_ms": 1924.5714,
+      "sigmoid_ms": 4446.1209,
+      "pre_ms": 558.7647000000001,
+      "decrypt_ms": 1007.6927,
+      "total_ms": 12017.5388,
+      "ms_per_patient": 0.30043847,
+      "feature_ciphertext_bytes": 165237345,
+      "result_ciphertext_bytes": 26235350,
+      "max_abs_probability_error": 0.00413017622462275,
+      "sign_mismatches": 0
+    }
+  ],
+  "determinism": {
+    "cohort_sha256_first": "7c3eb44cc829d2064dc788d3fb335b5965033368b26aec979266b2c0392c79f5",
+    "cohort_sha256_second": "7c3eb44cc829d2064dc788d3fb335b5965033368b26aec979266b2c0392c79f5",
+    "cohort_bit_identical": true,
+    "model_bit_identical": true,
+    "polynomial_bit_identical": true
+  },
+  "sample_size_justification": {
+    "validation_n": 4000,
+    "equivalence_margin": 0.01,
+    "alpha": 0.05,
+    "upper_bound_with_zero_discordances": 0.0009217947494826184,
+    "max_discordances_within_margin": 27,
+    "conclusion": "При валидационной выборке n = 4000 нулевое число расхождений даёт верхнюю границу 0.0922 % точного 95 % интервала Клоппера—Пирсона, что существенно ниже порога эквивалентности 1.00 %; порог остаётся выполненным вплоть до 27 расхождений. Выборка такого размера достаточна для проверки эквивалентности и даёт узкий интервал для AUC (SE ≈ 0.0108)."
+  },
+  "artifacts": [
+    {
+      "file": "cohort.csv",
+      "sha256": "7c3eb44cc829d2064dc788d3fb335b5965033368b26aec979266b2c0392c79f5",
+      "bytes": 1691833
+    },
+    {
+      "file": "model.json",
+      "sha256": "b48d841dd5a2e2fff6dec7d1ab8f19a9482c12f823fbb7eb36d2c29085a6059e",
+      "bytes": 843
+    },
+    {
+      "file": "roc_curve.csv",
+      "sha256": "be32bbe2dce688ded0ae8b5eca5e025e04b57f5cf72dd046250749da60762b96",
+      "bytes": 104034
+    },
+    {
+      "file": "calibration_deciles.csv",
+      "sha256": "02261c50d188b5ccf6e5fafe9a8cb2c804cbdb547895ccf111ce4b7d353d6667",
+      "bytes": 348
+    },
+    {
+      "file": "polynomial_sweep.csv",
+      "sha256": "343a7688f12574234e5881f5d21f7506a952a47eb6858d713859a6bec1766b8b",
+      "bytes": 325
+    },
+    {
+      "file": "polynomial_coefficients.csv",
+      "sha256": "a3ecf97cc29fb80907a496224498595a68060f2e1a7eba43fa2b0eff056e6f38",
+      "bytes": 180
+    },
+    {
+      "file": "probabilities.csv",
+      "sha256": "3980393b80d5a87f3134c099e3ca204b0407237b600be24cf460bf3d29af2981",
+      "bytes": 194871
+    },
+    {
+      "file": "scalability.csv",
+      "sha256": "5d98c29f8b0ec1cc39aacaa94108d76e6f498a562c271147619ba89b88722e65",
+      "bytes": 716
+    }
+  ]
+}

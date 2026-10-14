@@ -985,6 +985,25 @@ pub fn run(config: &StudyConfig, out_root: &Path) -> Result<StudyReport> {
         &config.evaluation,
     );
 
+    // Пофайловые вероятности для графика «открытый расчёт против зашифрованного»
+    // (и для контроля распределения ошибки): одна строка на пациента валидации.
+    {
+        let mut prob_csv = String::from(
+            "patient_index,eta_open,p_open,p_encrypted,decision_open,decision_encrypted\n",
+        );
+        for i in 0..val_probs.len() {
+            let eta = val_etas.get(i).copied().unwrap_or(f64::NAN);
+            let p_enc = he_run.probabilities.get(i).copied().unwrap_or(f64::NAN);
+            prob_csv.push_str(&format!(
+                "{i},{eta:.10},{:.10},{p_enc:.10},{},{}\n",
+                val_probs[i],
+                reference_decisions[i] as u8,
+                prob_decisions.get(i).copied().unwrap_or(false) as u8
+            ));
+        }
+        artifacts.push(write_text(&out_dir, "probabilities.csv", &prob_csv)?);
+    }
+
     let keys_and_volume = KeyAndVolumeReport {
         public_key_bytes: pk_bytes,
         secret_key_bytes: sk_bytes,
@@ -1637,9 +1656,10 @@ mod tests {
             "все прогоны контроля нейтральны — выборка сценариев вырождена"
         );
 
-        // Артефакты записаны и перечислены.
+        // Артефакты записаны и перечислены (включая probabilities.csv,
+        // из которого строится график «открытая вероятность vs зашифрованная»).
         assert!(
-            report.results.artifacts.len() >= 7,
+            report.results.artifacts.len() >= 8,
             "артефактов {}",
             report.results.artifacts.len()
         );
