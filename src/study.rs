@@ -180,9 +180,13 @@ pub fn default_study_config() -> StudyConfig {
             depth_margin: 3,
         },
         scalability: ScalabilityConfig {
-            sizes: vec![1_000, 5_000, 10_000, 20_000, 40_000],
+            // Единый набор размеров для статьи: внутри пакета (8 192 слота),
+            // на границе пакета и за ней, вплоть до 120 000 профилей.
+            // Валидационная выборка модели (4 000) от этого не меняется:
+            // расширяется только пул, на котором измеряются время и объёмы.
+            sizes: vec![1_000, 8_000, 40_000, 80_000, 120_000],
             repeats: 3,
-            cohort_size: 40_000,
+            cohort_size: 120_000,
             calibration_n: 20_000,
         },
         negative_control: NegativeControlConfig {

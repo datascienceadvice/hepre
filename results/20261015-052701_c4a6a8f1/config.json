@@ -133,12 +133,13 @@
   },
   "scalability": {
     "sizes": [
+      1000,
       8000,
       40000,
       80000,
       120000
     ],
-    "repeats": 1,
+    "repeats": 3,
     "cohort_size": 120000,
     "calibration_n": 20000
   },

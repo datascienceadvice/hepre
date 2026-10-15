@@ -6,8 +6,8 @@
   "cpu_count": 8,
   "openfhe_home": "D:/lair/hepre/vendor/openfhe-install",
   "crate_version": "0.1.0",
-  "git_revision": "acd70ff43f5cccb00f6580de57a13f285f5b9176",
+  "git_revision": "c4a6a8f1fd0bfedc1fbe4b06264547f96e967225",
   "git_branch": "master",
-  "started_unix": 1791984581,
-  "started_utc": "2026-10-14T13:29:41Z"
+  "started_unix": 1792042021,
+  "started_utc": "2026-10-15T05:27:01Z"
 }

@@ -1,8 +1,0 @@
-power,mult_depth,block_size,nonnegative_coeffs,monotone,max_abs_error
-3,1,2,false,false,1.013544508745e-1
-5,2,3,false,false,4.622793806965e-2
-7,3,2,false,false,2.081270728927e-2
-9,4,2,false,false,9.294356872000e-3
-11,4,2,false,false,4.130109771796e-3
-13,5,2,false,false,1.829703368353e-3
-15,5,2,false,false,8.090233014804e-4

@@ -134,13 +134,13 @@
   "scalability": {
     "sizes": [
       1000,
-      5000,
-      10000,
-      20000,
-      40000
+      8000,
+      40000,
+      80000,
+      120000
     ],
     "repeats": 3,
-    "cohort_size": 40000,
+    "cohort_size": 120000,
     "calibration_n": 20000
   },
   "negative_control": {

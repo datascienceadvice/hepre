@@ -55,16 +55,15 @@ python scripts\validate_metadata.py
 ```
 
 The repository ships the study runs. The canonical one is
-`results/20261013-045947_4659cac3/` (the manuscript cites its numbers);
-`results/20261014-132941_acd70ff4/` is an **appendix run** that extends the
-scalability test to 120,000 profiles (`configs/study_scale_120k.json`; the rest of
-the protocol is unchanged), and `results/20261014-131713_acd70ff4/` carries the
-per-patient `probabilities.csv` artifact (open vs encrypted probability). The pair
+`results/20261015-052701_c4a6a8f1/` — a single pipeline that runs both the
+sensitivity control and the scalability test up to 120,000 profiles
+(`configs/study.json`); the manuscript cites its numbers. The pair
 `results/20260925-042702_4659cac3/` and `results/20261012-083347_4659cac3/` is the
 reproducibility check run by the command above: every exact invariant defined by the
 script matches, including the `cohort.csv` digest; only CKKS-noise quantities and
 timings differ. Runs from `20261013-*` onwards also contain the sensitivity control
-of the disagreement metric (`negative_control` in `results.json`). Details:
+of the disagreement metric (`negative_control` in `results.json`) and the
+per-patient `probabilities.csv` artifact (open vs encrypted probability). Details:
 `docs/REPRODUCIBILITY.md`, §3.1.
 
 Every run is written to `results/<run-id>/` together with a SHA-256 manifest and an
