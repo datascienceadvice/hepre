@@ -55,7 +55,7 @@ python scripts\validate_metadata.py
 ```
 
 The repository ships the study runs. The canonical one is
-`results/20261015-052701_c4a6a8f1/` — a single pipeline that runs both the
+`results/20261015-073210_d678c29e/` — a single pipeline that runs both the
 sensitivity control and the scalability test up to 120,000 profiles
 (`configs/study.json`); the manuscript cites its numbers. The pair
 `results/20260925-042702_4659cac3/` and `results/20261012-083347_4659cac3/` is the
